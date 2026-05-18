@@ -816,7 +816,7 @@ function csvToMarkdown(csvContent, options) {
  * @param {number} delay - تاخیر به میلی‌ثانیه
  * @returns {java.lang.Thread} نخ ایجاد شده
  */
-const setTimeout = function(callback, delay) {
+function setTimeout(callback, delay) {
     const args = Array.prototype.slice.call(arguments, 2);
     const thread = new java.lang.Thread({
         run: function() {
@@ -836,7 +836,7 @@ const setTimeout = function(callback, delay) {
  * لغو اجرای setTimeout
  * @param {java.lang.Thread} thread - نخ ایجاد شده توسط setTimeout
  */
-const clearTimeout = function(thread) {
+function clearTimeout(thread) {
     if (thread && thread.isAlive()) {
         try {
             thread.interrupt();
@@ -856,7 +856,7 @@ const activeIntervals = [];
  * @param {number} delay - فاصله زمانی به میلی‌ثانیه
  * @returns {Object} آبجکت اینتروال با متد stop()
  */
-const setInterval = function(callback, delay) {
+function setInterval(callback, delay) {
     const args = Array.prototype.slice.call(arguments, 2);
     let running = true;
     
@@ -903,7 +903,7 @@ const setInterval = function(callback, delay) {
  * لغو اجرای setInterval
  * @param {Object} interval - آبجکت اینتروال برگشتی از setInterval
  */
-const clearInterval = function(interval) {
+function clearInterval(interval) {
     if (interval && interval.stop) {
         interval.stop();
     }
@@ -912,7 +912,7 @@ const clearInterval = function(interval) {
 /**
  * پاک کردن تمام اینتروال‌های فعال
  */
-const cleanupAllIntervals = function() {
+function cleanupAllIntervals() {
     while (activeIntervals.length > 0) {
         const interval = activeIntervals[0];
         if (interval && interval.stop) {
