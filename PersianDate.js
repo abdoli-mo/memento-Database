@@ -200,3 +200,5 @@ function initializePersianDate() {
         };
     }
 }
+// ========== 🚀 اجرای راه‌اندازی ===============
+initializePersianDate();
