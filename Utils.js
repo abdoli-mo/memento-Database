@@ -1,6 +1,6 @@
-// ============================================================
+// =============================================
 // 📚 توابع کمکی عمومی (Utility Functions)
-// ============================================================
+// =============================================
 
 /**
  * تبدیل اعداد انگلیسی به فارسی
@@ -71,9 +71,9 @@ const roundUp = (num, precision) => {
     return Math.ceil(num * factor) / factor;
 };
 
-// ============================================================
+// ===========================================
 // 🧮 توابع کار با آرایه (Array Utilities)
-// ============================================================
+// ===========================================
 
 /**
  * حذف مقادیر تکراری و مرتب‌سازی آرایه
@@ -145,9 +145,9 @@ const ranking = (arr, compFn) => {
     });
 };
 
-// ============================================================
-// 🌐 توابع رشته و جهت (String & Direction)
-// ============================================================
+// =============================================
+// 🌐  توابع رشته و جهت و ایجاد مارک دان (String & Direction - Markdown)
+// =============================================
 
 /**
  * اضافه کردن کنترل جهت (RTL/LTR) به ابتدای هر خط
@@ -172,9 +172,300 @@ const addDirectionControl = (text, direction) => {
     return controlledLines.join('\n');
 };
 
-// ============================================================
+
+/** Converts CSV to Markdown Table
+* @param {string} csvContent - The string content of the CSV
+* @param {Object} options - Formatting options
+* @param {string} [options.delimiter=","] - CSV column delimiter character
+* @param {boolean|number} [options.hasHeader=false] - Use first row(s) as header
+* @param {boolean} [options.compact=false] - Use compact spacing (no extra padding)
+* @param {boolean} [options.separatorBetweenRows=false] - Add separator between data rows
+* @param {string} [options.textDirection="ltr"] - Text direction: "ltr" or "rtl"
+* @param {string} [options.breakLine=null] - Character for manual line breaks in text
+* @param {number} [options.maxWidth=0] - Maximum total table width (0 = auto)
+* @param {Array|Object} [options.columnMaxWidth=null] - Maximum column widths
+* @returns {string}
+*/
+function csvToMarkdown(csvContent, options) {
+    options = options || {};
+    const delimiter = options.delimiter || ",";
+    const hasHeader = options.hasHeader || true;
+    const compact = options.compact || false;
+    const separatorBetweenRows = options.separatorBetweenRows || false;
+    const textDirection = options.textDirection || 'ltr';
+    
+    // اینجا اضافه شود:
+    logDebug('csvToMarkdown', 'options', '600', 
+        `تبدیل CSV: delimiter=${delimiter}, hasHeader=${hasHeader}, compact=${compact}`);
+    
+    // option های جدید
+    const breakLine = options.breakLine || null;
+    const maxWidth = options.maxWidth || 0;
+    const columnMaxWidth = options.columnMaxWidth || null;
+    
+    // مدیریت multi header
+    let headerRowsCount;
+    if (typeof hasHeader === 'number' && hasHeader > 0) {
+        headerRowsCount = hasHeader;
+    } else if (hasHeader === true) {
+        headerRowsCount = 1;
+    } else {
+        headerRowsCount = 0;
+    }
+    
+    const hasAnyHeader = headerRowsCount > 0;
+
+    if (delimiter != "\t") {
+        csvContent = csvContent.replace(/\t/g, "    ");
+    }
+    
+    const columns = csvContent.split("\n").filter(function(row) { return row.trim(); });
+    
+    // اینجا اضافه شود:
+    logInfo('csvToMarkdown', 'dimensions', '605', 
+        `جدول: ${columns.length} ردیف`);
+    
+    const splitColumns = "|";
+    const tabularData = [];
+    const maxRowLen = [];
+
+    // پردازش داده‌ها و محاسبه عرض ستون‌ها
+    columns.forEach(function(e, i) {
+        if (typeof tabularData[i] == "undefined") {
+            tabularData[i] = [];
+        }
+
+        const row = e.split(delimiter);
+
+        row.forEach(function(ee, ii) {
+            let cell = ee.trim();
+            
+            // حذف کوتیشن‌های اضافی از ابتدا و انتها
+            if (cell.startsWith('"') && cell.endsWith('"')) {
+                cell = cell.substring(1, cell.length - 1);
+            }
+            
+            // اعمال breakLine اگر فعال باشد
+            if (breakLine && cell.includes(breakLine)) {
+                let lines = cell.split(breakLine);
+                cell = lines.join('\n');
+            }
+            
+            if (typeof maxRowLen[ii] == "undefined") {
+                maxRowLen[ii] = 0;
+            }
+
+            // محاسبه طول بلندترین خط در سلول
+            let lines = cell.split('\n');
+            let maxCellLength = 0;
+            lines.forEach(function(line) {
+                const cleanLine = line.replace(/[\u200E\u200F]/g, '').trim();
+                maxCellLength = Math.max(maxCellLength, cleanLine.length);
+            });
+            
+            maxRowLen[ii] = Math.max(maxRowLen[ii], maxCellLength);
+            tabularData[i][ii] = cell;
+        });
+    });
+
+    // اینجا اضافه شود:
+    logDebug('csvToMarkdown', 'columns', '610', 
+        `ستون‌ها: ${maxRowLen.length} ستون, عرض‌ها: ${maxRowLen.join(',')}`);
+
+    // اعمال محدودیت‌های عرض ستون‌ها
+    if (columnMaxWidth) {
+        if (Array.isArray(columnMaxWidth)) {
+            // حالت آرایه: [25, 50, 20]
+            maxRowLen.forEach(function(len, index) {
+                if (columnMaxWidth[index] !== undefined && len > columnMaxWidth[index]) {
+                    maxRowLen[index] = columnMaxWidth[index];
+                }
+            });
+        } else if (typeof columnMaxWidth === 'object') {
+            // حالت آبجکت: {0: 25, 1: 50, 2: 20}
+            maxRowLen.forEach(function(len, index) {
+                if (columnMaxWidth[index] !== undefined && len > columnMaxWidth[index]) {
+                    maxRowLen[index] = columnMaxWidth[index];
+                }
+            });
+        }
+        
+        // اینجا اضافه شود:
+        logDebug('csvToMarkdown', 'limits', '615', 
+            `محدودیت ستون‌ها اعمال شد`);
+    }
+    
+    // اعمال محدودیت عرض کلی جدول
+    if (maxWidth > 0) {
+        const separatorCount = maxRowLen.length + 1;
+        const paddingCount = compact ? 0 : maxRowLen.length * 2;
+        const currentTotalWidth = maxRowLen.reduce(function(sum, len) {
+            return sum + len;
+        }, 0) + separatorCount + paddingCount;
+        
+        if (currentTotalWidth > maxWidth) {
+            const availableWidth = maxWidth - separatorCount - paddingCount;
+            const totalContentWidth = maxRowLen.reduce(function(sum, len) { return sum + len; }, 0);
+            const ratio = availableWidth / totalContentWidth;
+            
+            maxRowLen.forEach(function(len, index) {
+                maxRowLen[index] = Math.max(3, Math.floor(len * ratio));
+            });
+            
+            // اینجا اضافه شود:
+            logDebug('csvToMarkdown', 'widthLimit', '1280', 
+                `محدودیت عرض کلی اعمال شد: ${currentTotalWidth} → ${maxWidth}`);
+        }
+    }
+
+    // تابع برای شکستن کلمات طولانی
+    const wrapText = function(text, maxLength) {
+    if (text.length <= maxLength) return [text];
+    
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    
+    words.forEach(function(word) {
+        // اگر کلمه خیلی طولانی است، آن را بشکن
+        if (word.length >= maxLength) {
+            // خط فعلی را ذخیره کن
+            if (currentLine) {
+                lines.push(currentLine.trim());
+                currentLine = '';
+            }
+            // شکستن کلمه طولانی
+            const parts = word.match(new RegExp('.{1,' + maxLength + '}', 'g')) || [word];
+            parts.forEach(function(part) {
+                lines.push(part);
+            });
+        } else {
+            // کلمه عادی
+            const potentialLine = currentLine ? currentLine + ' ' + word : word;
+            if (potentialLine.length > maxLength) {
+                if (currentLine) {
+                    lines.push(currentLine.trim());
+                }
+                currentLine = word;
+            } else {
+                currentLine = potentialLine;
+            }
+        }
+    });
+    
+    // خط آخر را اضافه کن
+    if (currentLine) {
+        lines.push(currentLine.trim());
+    }
+
+    // ترکیب خطوط کوتاه مجاور
+    let i = 0;
+    while (i < lines.length - 1) {
+        if (lines[i].length + 1 + lines[i + 1].length <= maxLength) {
+            lines[i] = lines[i] + ' ' + lines[i + 1];
+            lines.splice(i + 1, 1);
+        } else {
+            i++;
+        }
+    }
+    
+    return lines;
+};
+    // تولید خط جداکننده
+    let separatorOutput = "";
+    maxRowLen.forEach(function(len) {
+        const lineLength = len + (compact ? 0 : 2);
+        const dashLine = Array(lineLength + 1).join("-");
+        separatorOutput += splitColumns + dashLine;
+    });
+    separatorOutput += splitColumns + "\n";
+
+    let headerOutput = "";
+    let rowOutput = "";
+    let remainingHeaderRows = headerRowsCount;
+    
+    // تولید ردیف‌ها
+    tabularData.forEach(function(row, rowIndex) {
+        // پردازش هر سلول و شکستن کلمات طولانی
+        const processedRow = [];
+        let maxLinesInRow = 1;
+        
+        row.forEach(function(cell, colIndex) {
+            const maxColWidth = maxRowLen[colIndex];
+            const cellLines = cell.split('\n');
+            let allWrappedLines = [];
+            
+            cellLines.forEach(function(line) {
+                const wrappedLines = wrapText(line, maxColWidth);
+                allWrappedLines = allWrappedLines.concat(wrappedLines);
+            });
+            
+            processedRow.push(allWrappedLines);
+            maxLinesInRow = Math.max(maxLinesInRow, allWrappedLines.length);
+        });
+        
+        // تولید هر خط از ردیف
+        for (let lineIndex = 0; lineIndex < maxLinesInRow; lineIndex++) {
+            let line = "";
+            maxRowLen.forEach(function(len, colIndex) {
+                const cellLines = processedRow[colIndex];
+                const currentLine = cellLines[lineIndex] || "";
+                const cleanCurrentLine = currentLine.replace(/[\u200E\u200F]/g, '').trim();
+                
+                const spacingLength = Math.max(0, len - cleanCurrentLine.length);
+                const spacing = Array(spacingLength + 1).join(" ");
+                
+                const cellContent = textDirection === 'rtl' ? spacing + currentLine : currentLine + spacing;
+                line += splitColumns + (compact ? "" : " ") + cellContent + (compact ? "" : " ");
+            });
+            
+            line += splitColumns + "\n";
+            
+            if (remainingHeaderRows > 0) {
+                headerOutput += line;
+            } else {
+                rowOutput += line;
+            }
+        }
+        
+        if (remainingHeaderRows > 0) {
+            remainingHeaderRows--;
+            // اگر آخرین ردیف هدر است، خط جداکننده اضافه کن
+            if (remainingHeaderRows === 0) {
+                headerOutput += separatorOutput;
+            }
+        } else {
+            if (separatorBetweenRows && rowIndex < tabularData.length - 1) {
+                rowOutput += separatorOutput;
+            }
+        }
+    });
+
+    const finalTable = headerOutput + (hasAnyHeader && remainingHeaderRows === 0 ? "" : separatorOutput) + rowOutput;
+    
+    // اعمال کنترل جهت به کل خروجی
+    const controlChar = textDirection === 'rtl' ? '\u200F' : '\u200E';
+    const lines = finalTable.split('\n');
+    const controlledLines = [];
+    
+    lines.forEach(function(line) {
+        if (line.trim()) {
+            controlledLines.push(controlChar + line);
+        } else {
+            controlledLines.push('');
+        }
+    });
+    
+    // اینجا اضافه شود:
+    logInfo('csvToMarkdown', 'complete', '630', 
+        `اتمام تبدیل: ${columns.length} ردیف به Markdown`);
+    
+    return controlledLines.join('\n');
+}
+
+// =============================================
 // ⏱️ توابع زمانبندی (جاوا) - نیاز به Function Expression به دلیل arguments
-// ============================================================
+// =============================================
 
 /**
  * اجرای تابع پس از تاخیر مشخص (جاوا)
