@@ -7,7 +7,7 @@
  * @param {number|string} num - عدد یا رشته حاوی عدد
  * @returns {string} عدد به صورت فارسی
  */
-const toFarsiNumber = (num) => {
+function toFarsiNumber(num) {
     if (num === null || num === undefined) return '';
     return num.toString().replace(/\d/g, function(token) {
         return String.fromCharCode(token.charCodeAt(0) + 1728);
@@ -19,7 +19,7 @@ const toFarsiNumber = (num) => {
  * @param {Date} t - شیء تاریخ
  * @returns {string} زمان به فرمت HH:MM
  */
-const time = (t) => {
+function time(t) {
     if (!(t instanceof Date) || isNaN(t.getTime())) return '';
     const hours = t.getHours().toString().padStart(2, '0');
     const minutes = t.getMinutes().toString().padStart(2, '0');
@@ -31,7 +31,7 @@ const time = (t) => {
  * @param {number} ms - مدت زمان توقف به میلی‌ثانیه
  * @returns {Promise|void} اگر در محیط Promise وجود داشته باشد
  */
-const sleep = (ms) => {
+function sleep (ms) {
     try {
         java.lang.Thread.sleep(ms);
         return;
@@ -54,7 +54,7 @@ const sleep = (ms) => {
  * @param {Function} callback - تابعی که بعد از تاخیر اجرا شود
  * @param {number} ms - مدت زمان تاخیر به میلی‌ثانیه
  */
-const sleepThen = (callback, ms) => {
+function sleepThen(callback, ms) {
     setTimeout(callback, ms);
 };
 
@@ -64,7 +64,7 @@ const sleepThen = (callback, ms) => {
  * @param {number} precision - تعداد رقم اعشار
  * @returns {number} عدد گرد شده رو به بالا
  */
-const roundUp = (num, precision) => {
+function roundUp(num, precision)  {
     let prec = precision;
     if (prec === undefined) prec = 0;
     const factor = Math.pow(10, prec);
@@ -80,7 +80,7 @@ const roundUp = (num, precision) => {
  * @param {Array} arr - آرایه ورودی
  * @returns {Array} آرایه بدون تکرار و مرتب شده
  */
-const uniqAndSort = (arr) => {
+function uniqAndSort(arr) {
     if (!Array.isArray(arr)) return [];
     const unique = [];
     const seen = {};
@@ -99,7 +99,7 @@ const uniqAndSort = (arr) => {
  * @param {Array} arr - آرایه ورودی
  * @returns {Array} آرایه مرتب شده جدید
  */
-const sorted = (arr) => {
+function sorted (arr) {
     if (!Array.isArray(arr)) return [];
     return arr.slice().sort(function(a, b) { return a - b; });
 };
@@ -111,7 +111,7 @@ const sorted = (arr) => {
  * @param {boolean} isSorted - آیا آرایه از قبل مرتب شده است؟
  * @returns {number} مقدار کوانتیل
  */
-const quantile = (arr, q, isSorted) => {
+function quantile (arr, q, isSorted) {
     let sortedArr;
     if (isSorted === true) {
         sortedArr = arr;
@@ -134,7 +134,7 @@ const quantile = (arr, q, isSorted) => {
  * @param {Function} compFn - تابع مقایسه (پیش‌فرض: <=)
  * @returns {Array} آرایه رتبه‌ها
  */
-const ranking = (arr, compFn) => {
+function ranking(arr, compFn) {
     if (!Array.isArray(arr) || arr.length === 0) return [];
     let compare = compFn;
     if (compare === undefined) {
@@ -155,7 +155,7 @@ const ranking = (arr, compFn) => {
  * @param {string} direction - جهت: 'ltr' یا 'rtl'
  * @returns {string} متن با کاراکتر کنترل جهت
  */
-const addDirectionControl = (text, direction) => {
+function addDirectionControl(text, direction){
     let dir = direction;
     if (dir === undefined) dir = 'ltr';
     const controlChar = (dir === 'rtl') ? '\u200F' : '\u200E';
@@ -473,7 +473,7 @@ function csvToMarkdown(csvContent, options) {
  * @param {number} delay - تاخیر به میلی‌ثانیه
  * @returns {java.lang.Thread} نخ ایجاد شده
  */
-const setTimeout = function(callback, delay) {
+function setTimeout(callback, delay) {
     const args = Array.prototype.slice.call(arguments, 2);
     const thread = new java.lang.Thread({
         run: function() {
@@ -493,7 +493,7 @@ const setTimeout = function(callback, delay) {
  * لغو اجرای setTimeout
  * @param {java.lang.Thread} thread - نخ ایجاد شده توسط setTimeout
  */
-const clearTimeout = function(thread) {
+function clearTimeout(thread) {
     if (thread && thread.isAlive()) {
         try {
             thread.interrupt();
@@ -513,7 +513,7 @@ const activeIntervals = [];
  * @param {number} delay - فاصله زمانی به میلی‌ثانیه
  * @returns {Object} آبجکت اینتروال با متد stop()
  */
-const setInterval = function(callback, delay) {
+function setInterval(callback, delay) {
     const args = Array.prototype.slice.call(arguments, 2);
     let running = true;
     
@@ -560,7 +560,7 @@ const setInterval = function(callback, delay) {
  * لغو اجرای setInterval
  * @param {Object} interval - آبجکت اینتروال برگشتی از setInterval
  */
-const clearInterval = function(interval) {
+function clearInterval(interval) {
     if (interval && interval.stop) {
         interval.stop();
     }
@@ -569,7 +569,7 @@ const clearInterval = function(interval) {
 /**
  * پاک کردن تمام اینتروال‌های فعال
  */
-const cleanupAllIntervals = function() {
+function cleanupAllIntervals() {
     while (activeIntervals.length > 0) {
         const interval = activeIntervals[0];
         if (interval && interval.stop) {
