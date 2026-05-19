@@ -1,19 +1,24 @@
 // ========== 🗓️ راه‌اندازی کامل توابع تاریخ شمسی ===============
-function initializePersianDate() {
-    // متد addDay - اضافه کردن روز به تاریخ
-    if (!Date.prototype.addDay) {
+(function(global) {
+    'use strict';
+    
+    // کش ساده برای محاسبات تکراری
+    const _persianCache = new WeakMap();
+    
+    function initializePersianDate() {
+        // متد addDay - اضافه کردن روز به تاریخ
         Date.prototype.addDay = function(days) {
             const date = new Date(this.valueOf());
-            date.setDate(this.getDate() + parseInt(days));
+            date.setDate(this.getDate() + Number(days));
             return date;
         };
-    }
-    
-    // متد setPersianDate - تنظیم تاریخ شمسی
-    if (!Date.prototype.setPersianDate) {
+        
+        // متد setPersianDate - تنظیم تاریخ شمسی
         Date.prototype.setPersianDate = function(jy, jm, jd) {
-           jy=parseInt(jy);jm=parseInt(jm);jd=parseInt(jd);
-           let gy = (jy <= 979) ? 621 : 1600;
+            jy = parseInt(jy);
+            jm = parseInt(jm);
+            jd = parseInt(jd);
+            let gy = (jy <= 979) ? 621 : 1600;
             jy -= (jy <= 979) ? 0 : 979;
             let days = (365 * jy) + ((parseInt(jy / 33)) * 8) + (parseInt(((jy % 33) + 3) / 4)) + 78 + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
             gy += 400 * (parseInt(days / 146097));
@@ -35,15 +40,17 @@ function initializePersianDate() {
                 if (gd <= v) break;
                 gd -= v;
             }
-            //log('fromdate:'+jy+'/'+jm+'/'+jd+'  setdate:'+gy+'/'+ gm +'/' +gd)
             this.setFullYear(gy, gm - 1, gd);
             return this;
         };
-    }
-    
-    // متد getPersianParts - دریافت اجزای تاریخ شمسی
-    if (!Date.prototype.getPersianParts) {
+        
+        // متد getPersianParts - دریافت اجزای تاریخ شمسی با کش ساده
         Date.prototype.getPersianParts = function() {
+            const timestamp = this.getTime();
+            if (_persianCache.has(this) && _persianCache.get(this).timestamp === timestamp) {
+                return _persianCache.get(this).parts;
+            }
+            
             let gy = this.getFullYear();
             const gm = this.getMonth() + 1;
             const gd = this.getDate();
@@ -60,69 +67,56 @@ function initializePersianDate() {
             if (days > 365) days = (days - 1) % 365;
             const jm = (days < 186) ? 1 + parseInt(days / 31) : 7 + parseInt((days - 186) / 30);
             const jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
-            return [jy, jm, jd];
+            const parts = [jy, jm, jd];
+            
+            _persianCache.set(this, { timestamp: timestamp, parts: parts });
+            return parts;
         };
-    }
-    
-    // متد getPersianWeekday - دریافت روز هفته شمسی (1=شنبه تا 7=جمعه)
-    if (!Date.prototype.getPersianWeekday) {
+        
+        // متد getPersianWeekday - دریافت روز هفته شمسی (1=شنبه تا 7=جمعه)
         Date.prototype.getPersianWeekday = function() {
             return (((this.getDay() + 1) % 7) + 1);
         };
-    }
-    
-    // متد getPersianDay - دریافت روز شمسی
-    if (!Date.prototype.getPersianDay) {
+        
+        // متد getPersianDay - دریافت روز شمسی
         Date.prototype.getPersianDay = function() {
             return +this.getPersianParts()[2];
         };
-    }
-    
-    // متد getPersianMonth - دریافت ماه شمسی
-    if (!Date.prototype.getPersianMonth) {
+        
+        // متد getPersianMonth - دریافت ماه شمسی
         Date.prototype.getPersianMonth = function() {
             return +this.getPersianParts()[1];
         };
-    }
-    
-    // متد getPersianYear - دریافت سال شمسی
-    if (!Date.prototype.getPersianYear) {
+        
+        // متد getPersianYear - دریافت سال شمسی
         Date.prototype.getPersianYear = function() {
             return +this.getPersianParts()[0];
         };
-    }
-    
-    // متد getPersianWeekdayName - دریافت نام روز هفته
-    if (!Date.prototype.getPersianWeekdayName) {
+        
+        // متد getPersianWeekdayName - دریافت نام روز هفته
         Date.prototype.getPersianWeekdayName = function() {
             const weekDaynames = ["شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"];
             return weekDaynames[this.getPersianWeekday() - 1];
         };
-    }
-    
-    // متد getPersianMonthName - دریافت نام ماه شمسی
-    if (!Date.prototype.getPersianMonthName) {
+        
+        // متد getPersianMonthName - دریافت نام ماه شمسی
         Date.prototype.getPersianMonthName = function() {
             const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
             const parts = this.getPersianParts();
             return monthNames[parts[1] - 1];
         };
-    }
-    
-    // متد getDateWithoutTime - دریافت تاریخ بدون زمان
-    if (!Date.prototype.getDateWithoutTime) {
-      Date.prototype.getDateWithoutTime = function() {
-          if (!(this instanceof Date) || isNaN(this.getTime())) {
-              return null;
-          }
-          const date = new Date(this);
-          date.setHours(0, 0, 0, 0);
-          return date;
-      }
-    }
-    
-    // متد getPersianDate - دریافت تاریخ شمسی فرمت‌شده
-    if (!Date.prototype.getPersianDate) {
+        
+        // متد getDateWithoutTime - دریافت تاریخ بدون زمان با اعتبارسنجی
+        Date.prototype.getDateWithoutTime = function() {
+            if (!(this instanceof Date) || isNaN(this.getTime())) {
+                return null;
+            }
+            const date = new Date(this);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        };
+        
+        // متد getPersianDate - دریافت تاریخ شمسی فرمت‌شده
         Date.prototype.getPersianDate = function() {
             const d = this.getPersianParts();
             const persianDate = (d[0] + "/" + ("0" + d[1]).slice(-2) + "/" + ("0" + d[2]).slice(-2));
@@ -130,40 +124,36 @@ function initializePersianDate() {
                 return String.fromCharCode(token.charCodeAt(0) + 1728);
             });
         };
-    }
-    
-    // متد getPersianFullYear - دریافت سال کامل شمسی
-    if (!Date.prototype.getPersianFullYear) {
+        
+        // متد getPersianFullYear - دریافت سال کامل شمسی
         Date.prototype.getPersianFullYear = function() {
             return this.getPersianParts()[0];
         };
-    }
-    
-    // متد toPersianDateString - رشته تاریخ شمسی کامل
-    if (!Date.prototype.toPersianDateString) {
+        
+        // متد toPersianDateString - رشته تاریخ شمسی کامل با اعداد فارسی
         Date.prototype.toPersianDateString = function() {
-            return this.getPersianWeekdayName() + " " + this.getPersianDay() + " " + this.getPersianMonthName() + " " + this.getPersianFullYear();
+            const day = this.getPersianDay().toString().replace(/\d/g, function(token) {
+                return String.fromCharCode(token.charCodeAt(0) + 1728);
+            });
+            const year = this.getPersianFullYear().toString().replace(/\d/g, function(token) {
+                return String.fromCharCode(token.charCodeAt(0) + 1728);
+            });
+            return this.getPersianWeekdayName() + " " + day + " " + this.getPersianMonthName() + " " + year;
         };
-    }
-    
-    // متد toShortPersianDate - تاریخ شمسی کوتاه
-    if (!Date.prototype.toShortPersianDate) {
+        
+        // متد toShortPersianDate - تاریخ شمسی کوتاه
         Date.prototype.toShortPersianDate = function() {
             const parts = this.getPersianParts();
             return parts[0] + "/" + ("0" + parts[1]).slice(-2) + "/" + ("0" + parts[2]).slice(-2);
         };
-    }
-    
-    // متد toPersianISOString - تاریخ شمسی استاندارد
-    if (!Date.prototype.toPersianISOString) {
+        
+        // متد toPersianISOString - تاریخ شمسی استاندارد
         Date.prototype.toPersianISOString = function() {
             const parts = this.getPersianParts();
             return parts[0] + "-" + ("0" + parts[1]).slice(-2) + "-" + ("0" + parts[2]).slice(-2);
         };
-    }
-    
-    // متد formatPersianDate - فرمت‌دهی پیشرفته تاریخ شمسی
-    if (!Date.prototype.formatPersianDate) {
+        
+        // متد formatPersianDate - فرمت‌دهی پیشرفته تاریخ شمسی
         Date.prototype.formatPersianDate = function(format) {
             format = format || 'yyyy/mm/dd';
             const replacements = {
@@ -179,26 +169,27 @@ function initializePersianDate() {
                 'DDD': this.getPersianWeekdayName().substring(0, 3),
                 'D': this.getPersianWeekday().toString()
             };
-
+            
             return Object.keys(replacements).reduce(function(str, key) {
                 return str.replace(new RegExp(key, 'g'), replacements[key]);
             }, format);
         };
-    }
-    
-    // متد addDays - نام دیگر برای addDay (برای سازگاری)
-    if (!Date.prototype.addDays) {
+        
+        // متد addDays - نام دیگر برای addDay (برای سازگاری)
         Date.prototype.addDays = Date.prototype.addDay;
-    }
-    
-    // متد isPersianLeapYear - بررسی سال کبیسه شمسی
-    if (!Date.prototype.isPersianLeapYear) {
+        
+        // متد isPersianLeapYear - بررسی سال کبیسه شمسی (اصلاح شده)
         Date.prototype.isPersianLeapYear = function(year) {
             year = parseInt(year) || this.getPersianFullYear();
-            const remainder = (year - (year > 979 ? 979 : 0)) % 33;
-            return [1, 5, 9, 13, 17, 22, 26, 30].includes(remainder);
+            const y = year - (year > 979 ? 979 : 0);
+            const remainder = y % 33;
+            return remainder === 1 || remainder === 5 || remainder === 9 || remainder === 13 || 
+                   remainder === 17 || remainder === 22 || remainder === 26 || remainder === 30;
         };
     }
-}
-// ========== 🚀 اجرای راه‌اندازی ===============
-initializePersianDate();
+    
+    // اجرای راه‌اندازی
+    initializePersianDate();
+    
+    
+})(this);
