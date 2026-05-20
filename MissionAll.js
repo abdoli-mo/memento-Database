@@ -266,7 +266,7 @@ function clearTimeout(thread) {
 
 // ذخیره اینتروال‌های فعال
 if (typeof _activeIntervals === 'undefined') {
-  const activeIntervals = [];
+  activeIntervals = [];
 }
 
 /**
@@ -379,7 +379,7 @@ function cleanupAllIntervals() {
 
 // ✅ بررسی وجود متغیر قبل از تعریف (قابل فراخوانی چندباره)
 if (typeof _persianCache === 'undefined') {
-    const _persianCache = new WeakMap();
+     _persianCache = new WeakMap();
 }
 
 // ✅ بررسی وجود متدها قبل از افزودن (جلوگیری از بازنویسی)
