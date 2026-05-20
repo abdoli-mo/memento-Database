@@ -1,355 +1,646 @@
 //-------------28/02/1405 22:00----------------
-// ========== 🗓️ راه‌اندازی کامل توابع تاریخ شمسی ===============
-function initializePersianDate() {
-    // متد addDay - اضافه کردن روز به تاریخ
-    if (!Date.prototype.addDay) {
-        Date.prototype.addDay = function(days) {
-            const date = new Date(this.valueOf());
-            date.setDate(this.getDate() + parseInt(days));
-            return date;
-        };
-    }
-    
-    // متد setPersianDate - تنظیم تاریخ شمسی
-    if (!Date.prototype.setPersianDate) {
-        Date.prototype.setPersianDate = function(jy, jm, jd) {
-           jy=parseInt(jy);jm=parseInt(jm);jd=parseInt(jd);
-           let gy = (jy <= 979) ? 621 : 1600;
-            jy -= (jy <= 979) ? 0 : 979;
-            let days = (365 * jy) + ((parseInt(jy / 33)) * 8) + (parseInt(((jy % 33) + 3) / 4)) + 78 + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
-            gy += 400 * (parseInt(days / 146097));
-            days %= 146097;
-            if (days > 36524) {
-                gy += 100 * (parseInt(--days / 36524));
-                days %= 36524;
-                if (days >= 365) days++;
-            }
-            gy += 4 * (parseInt((days) / 1461));
-            days %= 1461;
-            gy += parseInt((days - 1) / 365);
-            if (days > 365) days = (days - 1) % 365;
-            let gd = days + 1;
-            const sal_a = [0, 31, ((gy % 4 == 0 && gy % 100 != 0) || (gy % 400 == 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-            let gm;
-            for (gm = 0; gm < 13; gm++) {
-                let v = sal_a[gm];
-                if (gd <= v) break;
-                gd -= v;
-            }
-            //log('fromdate:'+jy+'/'+jm+'/'+jd+'  setdate:'+gy+'/'+ gm +'/' +gd)
-            this.setFullYear(gy, gm - 1, gd);
-            return this;
-        };
-    }
-    
-    // متد getPersianParts - دریافت اجزای تاریخ شمسی
-    if (!Date.prototype.getPersianParts) {
-        Date.prototype.getPersianParts = function() {
-            let gy = this.getFullYear();
-            const gm = this.getMonth() + 1;
-            const gd = this.getDate();
-            const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-            let jy = (gy <= 1600) ? 0 : 979;
-            gy -= (gy <= 1600) ? 621 : 1600;
-            const gy2 = (gm > 2) ? (gy + 1) : gy;
-            let days = (365 * gy) + (parseInt((gy2 + 3) / 4)) - (parseInt((gy2 + 99) / 100)) + (parseInt((gy2 + 399) / 400)) - 80 + gd + g_d_m[gm - 1];
-            jy += 33 * (parseInt(days / 12053));
-            days %= 12053;
-            jy += 4 * (parseInt(days / 1461));
-            days %= 1461;
-            jy += parseInt((days - 1) / 365);
-            if (days > 365) days = (days - 1) % 365;
-            const jm = (days < 186) ? 1 + parseInt(days / 31) : 7 + parseInt((days - 186) / 30);
-            const jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
-            return [jy, jm, jd];
-        };
-    }
-    
-    // متد getPersianWeekday - دریافت روز هفته شمسی (1=شنبه تا 7=جمعه)
-    if (!Date.prototype.getPersianWeekday) {
-        Date.prototype.getPersianWeekday = function() {
-            return (((this.getDay() + 1) % 7) + 1);
-        };
-    }
-    
-    // متد getPersianDay - دریافت روز شمسی
-    if (!Date.prototype.getPersianDay) {
-        Date.prototype.getPersianDay = function() {
-            return +this.getPersianParts()[2];
-        };
-    }
-    
-    // متد getPersianMonth - دریافت ماه شمسی
-    if (!Date.prototype.getPersianMonth) {
-        Date.prototype.getPersianMonth = function() {
-            return +this.getPersianParts()[1];
-        };
-    }
-    
-    // متد getPersianYear - دریافت سال شمسی
-    if (!Date.prototype.getPersianYear) {
-        Date.prototype.getPersianYear = function() {
-            return +this.getPersianParts()[0];
-        };
-    }
-    
-    // متد getPersianWeekdayName - دریافت نام روز هفته
-    if (!Date.prototype.getPersianWeekdayName) {
-        Date.prototype.getPersianWeekdayName = function() {
-            const weekDaynames = ["شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"];
-            return weekDaynames[this.getPersianWeekday() - 1];
-        };
-    }
-    
-    // متد getPersianMonthName - دریافت نام ماه شمسی
-    if (!Date.prototype.getPersianMonthName) {
-        Date.prototype.getPersianMonthName = function() {
-            const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
-            const parts = this.getPersianParts();
-            return monthNames[parts[1] - 1];
-        };
-    }
-    
-    // متد getDateWithoutTime - دریافت تاریخ بدون زمان
-    if (!Date.prototype.getDateWithoutTime) {
-      Date.prototype.getDateWithoutTime = function() {
-          if (!(this instanceof Date) || isNaN(this.getTime())) {
-              return null;
-          }
-          const date = new Date(this);
-          date.setHours(0, 0, 0, 0);
-          return date;
-      }
-    }
-    
-    // متد getPersianDate - دریافت تاریخ شمسی فرمت‌شده
-    if (!Date.prototype.getPersianDate) {
-        Date.prototype.getPersianDate = function() {
-            const d = this.getPersianParts();
-            const persianDate = (d[0] + "/" + ("0" + d[1]).slice(-2) + "/" + ("0" + d[2]).slice(-2));
-            return persianDate.replace(/([0-9])/g, function(token) {
-                return String.fromCharCode(token.charCodeAt(0) + 1728);
-            });
-        };
-    }
-    
-    // متد getPersianFullYear - دریافت سال کامل شمسی
-    if (!Date.prototype.getPersianFullYear) {
-        Date.prototype.getPersianFullYear = function() {
-            return this.getPersianParts()[0];
-        };
-    }
-    
-    // متد toPersianDateString - رشته تاریخ شمسی کامل
-    if (!Date.prototype.toPersianDateString) {
-        Date.prototype.toPersianDateString = function() {
-            return this.getPersianWeekdayName() + " " + this.getPersianDay() + " " + this.getPersianMonthName() + " " + this.getPersianFullYear();
-        };
-    }
-    
-    // متد toShortPersianDate - تاریخ شمسی کوتاه
-    if (!Date.prototype.toShortPersianDate) {
-        Date.prototype.toShortPersianDate = function() {
-            const parts = this.getPersianParts();
-            return parts[0] + "/" + ("0" + parts[1]).slice(-2) + "/" + ("0" + parts[2]).slice(-2);
-        };
-    }
-    
-    // متد toPersianISOString - تاریخ شمسی استاندارد
-    if (!Date.prototype.toPersianISOString) {
-        Date.prototype.toPersianISOString = function() {
-            const parts = this.getPersianParts();
-            return parts[0] + "-" + ("0" + parts[1]).slice(-2) + "-" + ("0" + parts[2]).slice(-2);
-        };
-    }
-    
-    // متد formatPersianDate - فرمت‌دهی پیشرفته تاریخ شمسی
-    if (!Date.prototype.formatPersianDate) {
-        Date.prototype.formatPersianDate = function(format) {
-            format = format || 'yyyy/mm/dd';
-            const replacements = {
-                'yyyy': this.getPersianFullYear().toString(),
-                'yy': (this.getPersianFullYear() % 100).toString().padStart(2, '0'),
-                'MMMM': this.getPersianMonthName(),
-                'MMM': this.getPersianMonthName().substring(0, 3),
-                'mm': this.getPersianMonth().toString().padStart(2, '0'),
-                'm': this.getPersianMonth().toString(),
-                'dd': this.getPersianDay().toString().padStart(2, '0'),
-                'd': this.getPersianDay().toString(),
-                'DDDD': this.getPersianWeekdayName(),
-                'DDD': this.getPersianWeekdayName().substring(0, 3),
-                'D': this.getPersianWeekday().toString()
-            };
-
-            return Object.keys(replacements).reduce(function(str, key) {
-                return str.replace(new RegExp(key, 'g'), replacements[key]);
-            }, format);
-        };
-    }
-    
-    // متد addDays - نام دیگر برای addDay (برای سازگاری)
-    if (!Date.prototype.addDays) {
-        Date.prototype.addDays = Date.prototype.addDay;
-    }
-    
-    // متد isPersianLeapYear - بررسی سال کبیسه شمسی
-    if (!Date.prototype.isPersianLeapYear) {
-        Date.prototype.isPersianLeapYear = function(year) {
-            year = parseInt(year) || this.getPersianFullYear();
-            const remainder = (year - (year > 979 ? 979 : 0)) % 33;
-            return [1, 5, 9, 13, 17, 22, 26, 30].includes(remainder);
-        };
-    }
-}
-
-// ========== 🚀 اجرای راه‌اندازی ===============
-initializePersianDate();
-
-// ========== 🔧 افزودن متدهای ضروری به آبجکت===============
-if (!Object.values) {
-    Object.values = function(obj) {
-        const values = [];
-        for (let key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                values.push(obj[key]);
-            }
+/**
+ * ============================================================
+ * 📖 راهنمای موتور جاوااسکریپت Rhino 1.7.15
+ * ============================================================
+ * 
+ * 🎯 هدف: معرفی محیط Rhino، محدودیت‌ها و راه‌حل‌ها
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 محتویات:
+ *   - معرفی Rhino و ویژگی‌ها
+ *   - لیست موارد پشتیبانی شده (Native)
+ *   - لیست موارد پشتیبانی نشده + جایگزین
+ *   - نکات عملی برای کار با Rhino
+ *   - Polyfill های ارائه شده در کتابخانه
+ *   - توصیه‌های نهایی و منابع مفید
+ * 
+ * ============================================================
+ */
+/**
+ * =============================================
+ * 📖 راهنمای موتور جاوااسکریپت Rhino 1.7.15
+ * =============================================
+ * 
+ * 🎯 Rhino چیست؟
+ *   Rhino یک موتور جاوااسکریپت متن‌باز است که به زبان جاوا نوشته شده
+ *   و توسط بنیاد موزیلا توسعه داده می‌شود. این موتور به شما امکان
+ *   می‌دهد کدهای جاوااسکریپت را در محیط جاوا اجرا کنید.
+ * 
+ * =============================================
+ * ✅ مواردی که در Rhino 1.7.15 به صورت NATIVE پشتیبانی می‌شوند
+ * ============================================
+ * 
+ *   📌 ECMAScript 5:
+ *      - تمام ویژگی‌های ES5 به طور کامل پشتیبانی می‌شود
+ * 
+ *   📌 توابع پیکانی (Arrow Functions):
+ *      const add = (a, b) => a + b;
+ * 
+ *   📌 متغیرهای محلی:
+ *      let x = 10;
+ *      const y = 20;
+ * 
+ *   📌 رشته‌های قالبی (Template Literals):
+ *      const msg = `Hello ${name}`;
+ * 
+ *   📌 ساختمان داده‌ها:
+ *      - Map, Set, WeakMap, WeakSet
+ * 
+ *   📌 حلقه for...of:
+ *      for (let item of array) { ... }  // با محدودیت روی Iterableها
+ * 
+ *   📌 متدهای آرایه:
+ *      map, filter, reduce, forEach, find, findIndex, includes, flat (جزئی)
+ * 
+ *   📌 متدهای آبجکت:
+ *      Object.keys, Object.values, Object.entries
+ * 
+ *   📌 متدهای رشته:
+ *      includes, startsWith, endsWith, repeat
+ * 
+ * ==========================================
+ * ❌ مواردی که در Rhino 1.7.15 پشتیبانی نمی‌شوند
+ * =========================================
+ * 
+ *   1️⃣ Destructuring (تخریب ساختار)
+ *      ❌ const { name, age } = obj;
+ *      ✅ const name = obj.name; const age = obj.age;
+ * 
+ *   2️⃣ Spread Operator (عملگر گسترش)
+ *      ❌ const newObj = { ...oldObj };
+ *      ✅ const newObj = Object.assign({}, oldObj);
+ *      ❌ const newArr = [...oldArr];
+ *      ✅ const newArr = oldArr.slice();
+ * 
+ *   3️⃣ Optional Chaining (زنجیر اختیاری)
+ *      ❌ const val = obj?.prop?.sub;
+ *      ✅ const val = obj && obj.prop && obj.prop.sub;
+ * 
+ *   4️⃣ Default Parameters (پارامتر پیش‌فرض)
+ *      ❌ function fn(a = 10) { ... }
+ *      ✅ function fn(a) { a = (a !== undefined) ? a : 10; ... }
+ * 
+ *   5️⃣ Class (کلاس)
+ *      ❌ class MyClass { constructor() {} }
+ *      ✅ function MyClass() { ... }
+ *      ✅ MyClass.prototype.method = function() { ... };
+ * 
+ *   6️⃣ Modules (ماژول‌ها)
+ *      ❌ import { fn } from './file.js';
+ *      ❌ export default fn;
+ *      ✅ const fn = require('./file.js');  // فقط در محیط‌های خاص
+ *      ✅ // یا بارگذاری دستی با load()
+ * 
+ *   7️⃣ Console (کنسول)
+ *      ❌ console.log('msg');
+ *      ✅ log('msg');  // تابع سفارشی (بخش 1.5)
+ * 
+ *   8️⃣ window / global / globalThis
+ *      ❌ window.myVar = 10;
+ *      ❌ global.myVar = 10;
+ *      ✅ myVar = 10;  // تعریف مستقیم در بالاترین scope
+ * 
+ *   9️⃣ setTimeout / setInterval
+ *      ❌ setTimeout(fn, 1000);
+ *      ✅ نیاز به Polyfill دارد (بخش 1.2)
+ * 
+ *   1️⃣0️⃣ Promise
+ *      ❌ new Promise((resolve, reject) => { ... });
+ *      ✅ نیاز به Polyfill دارد (بخش 1.4)
+ * 
+ * ============================================
+ * 🔧 نکات عملی برای کار با Rhino
+ * ============================================
+ * 
+ *   📌 تعریف متغیر سراسری:
+ *      globalVar = "value";  // بدون var/let/const
+ * 
+ *   📌 دسترسی به امکانات جاوا:
+ *      const thread = new java.lang.Thread();
+ *      const file = new java.io.File("test.txt");
+ *      const date = new java.util.Date();
+ * 
+ *   📌 دیباگ (جایگزین console.log):
+ *      function log(msg) { java.lang.System.out.println(msg); }
+ *      // یا استفاده از توابع کتابخانه (بخش 1.5):
+ *      logDebug('source', 'section', 'line', 'message');
+ *      logInfo('source', 'section', 'line', 'message');
+ *      logError('source', 'section', 'line', 'message');
+ * 
+ *   📌 اجرای کدها به ترتیب وابستگی:
+ *      load("1.1_Init_Polyfills.js");
+ *      load("1.2_Init_PersianDate.js");
+ *      load("1.3_Utils_Main.js");
+ *      load("1.4_Utils_Promise.js");
+ *      load("1.5_Utils_Debug.js");
+ *      load("3.1_Mission_Objects.js");
+ *      load("4.1_Mission_Functions.js");
+ * 
+ *   📌 مدیریت حافظه:
+ *      - WeakMap در Rhino کار می‌کند و برای کش خودکار مفید است
+ *      - از تابع cleanupAllIntervals() برای پاک کردن اینتروال‌ها استفاده کنید
+ * 
+ * ============================================
+ * 📦 Polyfill های ارائه شده در این کتابخانه
+ * =============================================
+ * 
+ *   📌 بخش 1.1 (Init_Polyfills):
+ *      - Array.from        - تبدیل array-like به آرایه
+ *      - Array.max         - پیدا کردن بزرگترین مقدار
+ *      - Array.min         - پیدا کردن کوچکترین مقدار
+ *      - setTimeout        - اجرای تابع پس از تاخیر
+ *      - clearTimeout      - لغو تایمر
+ *      - setInterval       - اجرای دوره‌ای تابع
+ *      - clearInterval     - لغو اینتروال
+ * 
+ *   📌 بخش 1.4 (Utils_Promise):
+ *      - Promise           - پیاده‌سازی کامل Promise
+ *      - Promise.all       - انتظار برای همه Promises
+ *      - Promise.race      - اولین Promise تکمیل شده
+ *      - Promise.any       - اولین Promise موفق
+ *      - Promise.allSettled - وضعیت همه Promises
+ *      - Promise.delay     - تاخیر با Promise
+ *      - Promise.timeout   - محدودیت زمان
+ * 
+ * =============================================
+ * 💡 توصیه‌های نهایی
+ * =============================================
+ * 
+ *   1. همیشه قبل از استفاده از یک متد، بررسی کنید که به صورت native وجود دارد
+ *   2. برای محیط‌های مختلف از ابزارهای ترنسپایلر مانند Babel استفاده کنید
+ *   3. در Rhino از let/const در سطح محلی استفاده کنید
+ *   4. برای متغیرهای سراسری از var یا بدون کلمه کلیدی استفاده کنید
+ *   5. برای دیباگ از توابع سفارشی (log, logDebug, logError) استفاده کنید
+ *   6. در صورت استفاده از تایمرها، پس از اتمام کار آن‌ها را پاک کنید
+ *   7. از کش کردن محاسبات سنگین با WeakMap برای بهبود عملکرد استفاده کنید
+ * 
+ * =============================================
+ * 📚 منابع مفید
+ * ============================================
+ * 
+ *   📖 مستندات رسمی Rhino:
+ *      https://developer.mozilla.org/en-US/docs/Rhino
+ * 
+ *   📖 تغییرات نسخه‌ها:
+ *      https://github.com/mozilla/rhino/releases
+ * 
+ *   📖 سازگاری با ECMAScript:
+ *      https://mozilla.github.io/rhino/compat/engines.html
+ * 
+ *   📖 راهنمای جاوااسکریپت:
+ *      https://developer.mozilla.org/en-US/docs/Web/JavaScript
+ * 
+ * =============================================
+ * 🆘 رفع اشکال (Troubleshooting)
+ * ============================================
+ * 
+ *   ❌ خطا: "TypeError: [function] is not a function"
+ *      → راه‌حل: متد مورد نظر وجود ندارد، Polyfill مربوطه را بارگذاری کنید
+ * 
+ *   ❌ خطا: "SyntaxError: missing ; before statement"
+ *      → راه‌حل: از Destructuring یا Spread Operator استفاده نکنید
+ *
+// =============================================
+**/
+/**
+ * ============================================================
+ * 🔧 Polyfills برای موتور جاوااسکریپت Rhino 1.7.15
+ * ============================================================
+ * 
+ * 🎯 هدف: افزودن متدهای缺失 به محیط Rhino
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 Polyfill های ارائه شده:
+ *   - Array.from        - تبدیل array-like به آرایه واقعی
+ *   - Array.prototype.max - پیدا کردن بزرگترین مقدار
+ *   - Array.prototype.min - پیدا کردن کوچکترین مقدار
+ *   - setTimeout        - اجرای تابع پس از تاخیر (با Thread)
+ *   - clearTimeout      - لغو تایمر
+ *   - setInterval       - اجرای دوره‌ای تابع
+ *   - clearInterval     - لغو اینتروال
+ *   - cleanupAllIntervals - پاک کردن تمام اینتروال‌ها
+ * 
+ * ⚠️ وابستگی‌ها: بدون وابستگی
+ * 
+ * ============================================================
+ */
+// ========== Array.from ==========
+if (!Array.from) {
+    Array.from = function(arrayLike, mapFn, thisArg) {
+        if (arrayLike == null) {
+            throw new TypeError('Array.from requires an array-like object');
         }
-        return values;
-    };
-}
-
-if (!Object.entries) {
-    Object.entries = function(obj) {
-        const entries = [];
-        for (let key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                entries.push([key, obj[key]]);
+        const items = Object(arrayLike);
+        const len = items.length >>> 0;
+        const result = new Array(len);
+        for (let i = 0; i < len; i++) {
+            let value = items[i];
+            if (mapFn) {
+                value = mapFn.call(thisArg, value, i);
             }
+            result[i] = value;
         }
-        return entries;
+        return result;
     };
 }
 
-if (!Object.fromEntries) {
-    Object.fromEntries = function(entries) {
-        const obj = {};
-        for (let i = 0; i < entries.length; i++) {
-            const entry = entries[i];
-            obj[entry[0]] = entry[1];
-        }
-        return obj;
-    };
-}
-
-// ========== 🔧 افزودن متدهای ضروری به آرایه ===============
-if (!Array.prototype.flat) {
-    Array.prototype.flat = function(depth) {
-        depth = depth === undefined ? 1 : Math.floor(depth);
-        if (depth < 1) return this.slice();
-        
-        return this.reduce(function(acc, val) {
-            return acc.concat(Array.isArray(val) ? val.flat(depth - 1) : val);
-        }, []);
-    };
-}
-
-if (!Array.prototype.flatMap) {
-    Array.prototype.flatMap = function(callback, thisArg) {
-        return this.map(callback, thisArg).flat();
-    };
-}
-
-if (!Array.prototype.includes) {
-    Array.prototype.includes = function(searchElement, fromIndex) {
-        if (this == null) throw new TypeError('"this" is null or not defined');
-        
-        const o = Object(this);
-        const len = o.length >>> 0;
-        
-        if (len === 0) return false;
-        
-        const n = fromIndex | 0;
-        const k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
-        
-        while (k < len) {
-            if (o[k] === searchElement) return true;
-            k++;
-        }
-        return false;
-    };
-}
-
+// ========== Array.prototype.max ==========
 if (!Array.prototype.max) {
     Array.prototype.max = function() {
+        if (this.length === 0) return undefined;
         return Math.max.apply(null, this);
     };
 }
 
+// ========== Array.prototype.min ==========
 if (!Array.prototype.min) {
     Array.prototype.min = function() {
+        if (this.length === 0) return undefined;
         return Math.min.apply(null, this);
     };
 }
 
-if (!Array.from) {
-    Array.from = function(object) {
-        return [].slice.call(object);
+// =============================================
+// ⏱️ توابع زمانبندی (جاوا) - نیاز به Function Expression به دلیل arguments
+// =============================================
+
+/**
+ * اجرای تابع پس از تاخیر مشخص (جاوا)
+ * @param {Function} callback - تابع برگشتی
+ * @param {number} delay - تاخیر به میلی‌ثانیه
+ * @returns {java.lang.Thread} نخ ایجاد شده
+ */
+function setTimeout(callback, delay) {
+    const args = Array.prototype.slice.call(arguments, 2);
+    const thread = new java.lang.Thread({
+        run: function() {
+            try {
+                java.lang.Thread.sleep(delay);
+                callback.apply(null, args);
+            } catch(e) {
+                // نخ interrupted
+            }
+        }
+    });
+    thread.start();
+    return thread;
+};
+
+/**
+ * لغو اجرای setTimeout
+ * @param {java.lang.Thread} thread - نخ ایجاد شده توسط setTimeout
+ */
+function clearTimeout(thread) {
+    if (thread && thread.isAlive()) {
+        try {
+            thread.interrupt();
+            thread.join(100);
+        } catch(e) {
+            // خطای لغو
+        }
+    }
+};
+
+// ذخیره اینتروال‌های فعال
+const activeIntervals = [];
+
+/**
+ * اجرای تابع به صورت دوره‌ای (جاوا)
+ * @param {Function} callback - تابع برگشتی
+ * @param {number} delay - فاصله زمانی به میلی‌ثانیه
+ * @returns {Object} آبجکت اینتروال با متد stop()
+ */
+function setInterval(callback, delay) {
+    const args = Array.prototype.slice.call(arguments, 2);
+    let running = true;
+    
+    const thread = new java.lang.Thread({
+        run: function() {
+            while (running) {
+                try {
+                    java.lang.Thread.sleep(delay);
+                    if (running) {
+                        callback.apply(null, args);
+                    }
+                } catch(e) {
+                    break;
+                }
+            }
+        }
+    });
+    
+    const intervalObj = {
+        thread: thread,
+        stop: function() {
+            running = false;
+            try {
+                if (this.thread && this.thread.isAlive()) {
+                    this.thread.interrupt();
+                    this.thread.join(100);
+                }
+            } catch(e) {
+                // خطای توقف
+            }
+            const idx = activeIntervals.indexOf(intervalObj);
+            if (idx > -1) {
+                activeIntervals.splice(idx, 1);
+            }
+        }
+    };
+    
+    activeIntervals.push(intervalObj);
+    thread.start();
+    return intervalObj;
+};
+
+/**
+ * لغو اجرای setInterval
+ * @param {Object} interval - آبجکت اینتروال برگشتی از setInterval
+ */
+function clearInterval(interval) {
+    if (interval && interval.stop) {
+        interval.stop();
+    }
+};
+
+/**
+ * پاک کردن تمام اینتروال‌های فعال
+ */
+function cleanupAllIntervals() {
+    while (activeIntervals.length > 0) {
+        const interval = activeIntervals[0];
+        if (interval && interval.stop) {
+            interval.stop();
+        }
+    }
+};
+/**
+ * ============================================
+ * 🗓️ توابع تاریخ شمسی (Persian Date)
+ * ============================================
+ * 
+ * 🎯 هدف: افزودن متدهای تاریخ شمسی به Date.prototype
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 متدهای اضافه شده به Date:
+ *   - addDay()           - اضافه کردن روز
+ *   - setPersianDate()   - تنظیم تاریخ شمسی
+ *   - getPersianParts()  - دریافت اجزای تاریخ (با کش)
+ *   - getPersianDay()    - دریافت روز شمسی
+ *   - getPersianMonth()  - دریافت ماه شمسی
+ *   - getPersianYear()   - دریافت سال شمسی
+ *   - getPersianWeekday() - دریافت روز هفته (1-7)
+ *   - getPersianWeekdayName() - نام روز هفته
+ *   - getPersianMonthName() - نام ماه
+ *   - getDateWithoutTime() - حذف زمان
+ *   - getPersianDate()   - تاریخ فرمت‌شده (اعداد فارسی)
+ *   - toPersianDateString() - رشته کامل تاریخ (اعداد فارسی)
+ *   - toShortPersianDate() - تاریخ کوتاه
+ *   - toPersianISOString() - استاندارد ISO
+ *   - formatPersianDate() - فرمت دلخواه
+ *   - isPersianLeapYear() - بررسی سال کبیسه
+ * 
+ * ⚠️ وابستگی‌ها: بدون وابستگی (کاملاً مستقل)
+ * 
+ * 📌 نکات فنی:
+ *   - از WeakMap برای کش کردن نتایج getPersianParts استفاده می‌کند
+ *   - اعداد فارسی با جایگزینی یونیکد (1728+) تبدیل می‌شوند
+ *   - الگوریتم کبیسه شمسی: (y % 33) در {1,5,9,13,17,22,26,30}
+ * 
+ * ============================================
+ */
+// کش ساده برای محاسبات تکراری
+const _persianCache = new WeakMap();
+
+function initializePersianDate() {
+    // متد addDay - اضافه کردن روز به تاریخ
+    Date.prototype.addDay = function(days) {
+        const date = new Date(this.valueOf());
+        date.setDate(this.getDate() + Number(days));
+        return date;
+    };
+    
+    // متد setPersianDate - تنظیم تاریخ شمسی
+    Date.prototype.setPersianDate = function(jy, jm, jd) {
+        jy = parseInt(jy);
+        jm = parseInt(jm);
+        jd = parseInt(jd);
+        let gy = (jy <= 979) ? 621 : 1600;
+        jy -= (jy <= 979) ? 0 : 979;
+        let days = (365 * jy) + ((parseInt(jy / 33)) * 8) + (parseInt(((jy % 33) + 3) / 4)) + 78 + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+        gy += 400 * (parseInt(days / 146097));
+        days %= 146097;
+        if (days > 36524) {
+            gy += 100 * (parseInt(--days / 36524));
+            days %= 36524;
+            if (days >= 365) days++;
+        }
+        gy += 4 * (parseInt((days) / 1461));
+        days %= 1461;
+        gy += parseInt((days - 1) / 365);
+        if (days > 365) days = (days - 1) % 365;
+        let gd = days + 1;
+        const sal_a = [0, 31, ((gy % 4 == 0 && gy % 100 != 0) || (gy % 400 == 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        let gm;
+        for (gm = 0; gm < 13; gm++) {
+            let v = sal_a[gm];
+            if (gd <= v) break;
+            gd -= v;
+        }
+        this.setFullYear(gy, gm - 1, gd);
+        return this;
+    };
+    
+    // متد getPersianParts - دریافت اجزای تاریخ شمسی با کش ساده
+    Date.prototype.getPersianParts = function() {
+        const timestamp = this.getTime();
+        if (_persianCache.has(this) && _persianCache.get(this).timestamp === timestamp) {
+            return _persianCache.get(this).parts;
+        }
+        
+        let gy = this.getFullYear();
+        const gm = this.getMonth() + 1;
+        const gd = this.getDate();
+        const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        let jy = (gy <= 1600) ? 0 : 979;
+        gy -= (gy <= 1600) ? 621 : 1600;
+        const gy2 = (gm > 2) ? (gy + 1) : gy;
+        let days = (365 * gy) + (parseInt((gy2 + 3) / 4)) - (parseInt((gy2 + 99) / 100)) + (parseInt((gy2 + 399) / 400)) - 80 + gd + g_d_m[gm - 1];
+        jy += 33 * (parseInt(days / 12053));
+        days %= 12053;
+        jy += 4 * (parseInt(days / 1461));
+        days %= 1461;
+        jy += parseInt((days - 1) / 365);
+        if (days > 365) days = (days - 1) % 365;
+        const jm = (days < 186) ? 1 + parseInt(days / 31) : 7 + parseInt((days - 186) / 30);
+        const jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
+        const parts = [jy, jm, jd];
+        
+        _persianCache.set(this, { timestamp: timestamp, parts: parts });
+        return parts;
+    };
+    
+    // متد getPersianWeekday - دریافت روز هفته شمسی (1=شنبه تا 7=جمعه)
+    Date.prototype.getPersianWeekday = function() {
+        return (((this.getDay() + 1) % 7) + 1);
+    };
+    
+    // متد getPersianDay - دریافت روز شمسی
+    Date.prototype.getPersianDay = function() {
+        return +this.getPersianParts()[2];
+    };
+    
+    // متد getPersianMonth - دریافت ماه شمسی
+    Date.prototype.getPersianMonth = function() {
+        return +this.getPersianParts()[1];
+    };
+    
+    // متد getPersianYear - دریافت سال شمسی
+    Date.prototype.getPersianYear = function() {
+        return +this.getPersianParts()[0];
+    };
+    
+    // متد getPersianWeekdayName - دریافت نام روز هفته
+    Date.prototype.getPersianWeekdayName = function() {
+        const weekDaynames = ["شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"];
+        return weekDaynames[this.getPersianWeekday() - 1];
+    };
+    
+    // متد getPersianMonthName - دریافت نام ماه شمسی
+    Date.prototype.getPersianMonthName = function() {
+        const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+        const parts = this.getPersianParts();
+        return monthNames[parts[1] - 1];
+    };
+    
+    // متد getDateWithoutTime - دریافت تاریخ بدون زمان با اعتبارسنجی
+    Date.prototype.getDateWithoutTime = function() {
+        if (!(this instanceof Date) || isNaN(this.getTime())) {
+            return null;
+        }
+        const date = new Date(this);
+        date.setHours(0, 0, 0, 0);
+        return date;
+    };
+    
+    // متد getPersianDate - دریافت تاریخ شمسی فرمت‌شده
+    Date.prototype.getPersianDate = function() {
+        const d = this.getPersianParts();
+        const persianDate = (d[0] + "/" + ("0" + d[1]).slice(-2) + "/" + ("0" + d[2]).slice(-2));
+        return persianDate.replace(/([0-9])/g, function(token) {
+            return String.fromCharCode(token.charCodeAt(0) + 1728);
+        });
+    };
+    
+    // متد getPersianFullYear - دریافت سال کامل شمسی
+    Date.prototype.getPersianFullYear = function() {
+        return this.getPersianParts()[0];
+    };
+    
+    // متد toPersianDateString - رشته تاریخ شمسی کامل با اعداد فارسی
+    Date.prototype.toPersianDateString = function() {
+        const day = this.getPersianDay().toString().replace(/\d/g, function(token) {
+            return String.fromCharCode(token.charCodeAt(0) + 1728);
+        });
+        const year = this.getPersianFullYear().toString().replace(/\d/g, function(token) {
+            return String.fromCharCode(token.charCodeAt(0) + 1728);
+        });
+        return this.getPersianWeekdayName() + " " + day + " " + this.getPersianMonthName() + " " + year;
+    };
+    
+    // متد toShortPersianDate - تاریخ شمسی کوتاه
+    Date.prototype.toShortPersianDate = function() {
+        const parts = this.getPersianParts();
+        return parts[0] + "/" + ("0" + parts[1]).slice(-2) + "/" + ("0" + parts[2]).slice(-2);
+    };
+    
+    // متد toPersianISOString - تاریخ شمسی استاندارد
+    Date.prototype.toPersianISOString = function() {
+        const parts = this.getPersianParts();
+        return parts[0] + "-" + ("0" + parts[1]).slice(-2) + "-" + ("0" + parts[2]).slice(-2);
+    };
+    
+    // متد formatPersianDate - فرمت‌دهی پیشرفته تاریخ شمسی
+    Date.prototype.formatPersianDate = function(format) {
+        format = format || 'yyyy/mm/dd';
+        const replacements = {
+            'yyyy': this.getPersianFullYear().toString(),
+            'yy': (this.getPersianFullYear() % 100).toString().padStart(2, '0'),
+            'MMMM': this.getPersianMonthName(),
+            'MMM': this.getPersianMonthName().substring(0, 3),
+            'mm': this.getPersianMonth().toString().padStart(2, '0'),
+            'm': this.getPersianMonth().toString(),
+            'dd': this.getPersianDay().toString().padStart(2, '0'),
+            'd': this.getPersianDay().toString(),
+            'DDDD': this.getPersianWeekdayName(),
+            'DDD': this.getPersianWeekdayName().substring(0, 3),
+            'D': this.getPersianWeekday().toString()
+        };
+        
+        return Object.keys(replacements).reduce(function(str, key) {
+            return str.replace(new RegExp(key, 'g'), replacements[key]);
+        }, format);
+    };
+    
+    // متد addDays - نام دیگر برای addDay (برای سازگاری)
+    Date.prototype.addDays = Date.prototype.addDay;
+    
+    // متد isPersianLeapYear - بررسی سال کبیسه شمسی (اصلاح شده)
+    Date.prototype.isPersianLeapYear = function(year) {
+        year = parseInt(year) || this.getPersianFullYear();
+        const y = year - (year > 979 ? 979 : 0);
+        const remainder = y % 33;
+        return remainder === 1 || remainder === 5 || remainder === 9 || remainder === 13 || 
+               remainder === 17 || remainder === 22 || remainder === 26 || remainder === 30;
     };
 }
 
-// ==================== String Polyfills ====================
-if (!String.prototype.includes) {
-  String.prototype.includes = function(search, start) {
-      if (typeof start !== 'number') start = 0;
-      return this.indexOf(search, start) !== -1;
-  };
-}
+// اجرای راه‌اندازی
+initializePersianDate();
+  
 
-if (!String.prototype.startsWith) {
-  String.prototype.startsWith = function(search, pos) {
-      return this.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
-  };
-}
 
-if (!String.prototype.endsWith) {
-  String.prototype.endsWith = function(search, this_len) {
-      if (this_len === undefined || this_len > this.length) {
-          this_len = this.length;
-      }
-      return this.substring(this_len - search.length, this_len) === search;
-  };
-}
-
-if (!String.prototype.repeat) {
-  String.prototype.repeat = function(count) {
-      if (this == null) throw new TypeError('can\'t convert ' + this + ' to object');
-      let str = '' + this;
-      count = +count;
-      if (count != count) count = 0;
-      if (count < 0) throw new RangeError('repeat count must be non-negative');
-      if (count == Infinity) throw new RangeError('repeat count must be less than infinity');
-      count = Math.floor(count);
-      if (str.length == 0 || count == 0) return '';
-      const maxCount = str.length * count;
-      count = Math.floor(Math.log(count) / Math.log(2));
-      while (count) {
-          str += str;
-          count--;
-      }
-      str += str.substring(0, maxCount - str.length);
-      return str;
-  };
-}
-
-// =============================================
-// 📚 توابع کمکی عمومی (Utility Functions)
-// =============================================
-
+/**
+ * ============================================================
+ * 🛠️ توابع کمکی عمومی (Utility Functions)
+ * ============================================================
+ * 
+ * 🎯 هدف: ارائه توابع پرکاربرد و عمومی
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 توابع ارائه شده:
+ *   - toFarsiNumber()    - تبدیل اعداد به فارسی (مستقل)
+ *   - time()             - استخراج ساعت و دقیقه
+ *   - sleep()            - توقف اجرا (همگام/ناهمگام)
+ *   - sleepThen()        - اجرا پس از تاخیر
+ *   - roundUp()          - گرد کردن رو به بالا
+ *   - uniqAndSort()      - حذف تکراری و مرتب‌سازی
+ *   - sorted()           - مرتب‌سازی بدون تغییر اصلی
+ *   - quantile()         - محاسبه کوانتیل
+ *   - ranking()          - رتبه‌بندی مقادیر
+ *   - addDirectionControl() - کنترل جهت متن (RTL/LTR)
+ *   - csvToMarkdown()    - تبدیل CSV به جدول Markdown
+ * 
+ * ⚠️ وابستگی‌ها: بخش 1.1 (Polyfill ها)
+ * 
+ * 📌 نکات فنی:
+ *   - تابع toFarsiNumber مستقل است و از جایگزینی یونیکد (1728+) استفاده می‌کند
+ *   - تابع sleep ابتدا Thread.sleep جاوا را امتحان می‌کند، سپس Promise و در نهایت busy-wait
+ *   - تابع csvToMarkdown از polyfill های آرایه (flat, flatMap) استفاده می‌کند
+ * 
+ * ============================================================
+ */
 /**
  * تبدیل اعداد انگلیسی به فارسی
  * @param {number|string} num - عدد یا رشته حاوی عدد
  * @returns {string} عدد به صورت فارسی
  */
+ 
 function toFarsiNumber(num) {
     if (num === null || num === undefined) return '';
     return num.toString().replace(/\d/g, function(token) {
@@ -454,22 +745,31 @@ function sorted (arr) {
  * @param {boolean} isSorted - آیا آرایه از قبل مرتب شده است؟
  * @returns {number} مقدار کوانتیل
  */
-function quantile (arr, q, isSorted) {
+function quantile(arr, q, isSorted) {
+    // اعتبارسنجی ورودی
+    if (!arr || !Array.isArray(arr) || arr.length === 0) {
+        return 0;
+    }
+    
+    // اعتبارسنجی مقدار q
+    q = Math.max(0, Math.min(1, q));
+    
     let sortedArr;
     if (isSorted === true) {
         sortedArr = arr;
     } else {
         sortedArr = arr.slice().sort(function(a, b) { return a - b; });
     }
-    if (!sortedArr || sortedArr.length === 0) return 0;
+    
     const pos = (sortedArr.length - 1) * q;
     const base = Math.floor(pos);
     const rest = pos - base;
+    
     if (sortedArr[base + 1] !== undefined) {
         return sortedArr[base] + rest * (sortedArr[base + 1] - sortedArr[base]);
     }
     return sortedArr[base];
-};
+}
 
 /**
  * رتبه‌بندی مقادیر در آرایه
@@ -806,130 +1106,32 @@ function csvToMarkdown(csvContent, options) {
     return controlledLines.join('\n');
 }
 
-// =============================================
-// ⏱️ توابع زمانبندی (جاوا) - نیاز به Function Expression به دلیل arguments
-// =============================================
 
 /**
- * اجرای تابع پس از تاخیر مشخص (جاوا)
- * @param {Function} callback - تابع برگشتی
- * @param {number} delay - تاخیر به میلی‌ثانیه
- * @returns {java.lang.Thread} نخ ایجاد شده
+ * ============================================================
+ * ⏱️ پیاده‌سازی کامل Promise برای Rhino
+ * ============================================================
+ * 
+ * 🎯 هدف: افزودن Promise و متدهای پیشرفته به محیط Rhino
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 متدهای ارائه شده:
+ *   - Promise            - سازنده اصلی
+ *   - then/catch/finally - متدهای نمونه
+ *   - resolve/reject     - متدهای ایستا
+ *   - all/race/any/allSettled - ترکیب‌کننده‌ها
+ *   - delay/timeout      - تاخیر و محدودیت زمان
+ *   - retry/sequential/parallel - الگوهای اجرا
+ *   - cancellable/promisify - قابلیت‌های پیشرفته
+ *   - map/reduce/props   - پردازش مجموعه‌ها
+ *   - debounce/queue/pipeline - ابزارهای کاربردی
+ * 
+ * ⚠️ وابستگی‌ها: بخش 1.1 (setTimeout)
+ * 
+ * ============================================================
  */
-function setTimeout(callback, delay) {
-    const args = Array.prototype.slice.call(arguments, 2);
-    const thread = new java.lang.Thread({
-        run: function() {
-            try {
-                java.lang.Thread.sleep(delay);
-                callback.apply(null, args);
-            } catch(e) {
-                // نخ interrupted
-            }
-        }
-    });
-    thread.start();
-    return thread;
-};
-
-/**
- * لغو اجرای setTimeout
- * @param {java.lang.Thread} thread - نخ ایجاد شده توسط setTimeout
- */
-function clearTimeout(thread) {
-    if (thread && thread.isAlive()) {
-        try {
-            thread.interrupt();
-            thread.join(100);
-        } catch(e) {
-            // خطای لغو
-        }
-    }
-};
-
-// ذخیره اینتروال‌های فعال
-const activeIntervals = [];
-
-/**
- * اجرای تابع به صورت دوره‌ای (جاوا)
- * @param {Function} callback - تابع برگشتی
- * @param {number} delay - فاصله زمانی به میلی‌ثانیه
- * @returns {Object} آبجکت اینتروال با متد stop()
- */
-function setInterval(callback, delay) {
-    const args = Array.prototype.slice.call(arguments, 2);
-    let running = true;
-    
-    const thread = new java.lang.Thread({
-        run: function() {
-            while (running) {
-                try {
-                    java.lang.Thread.sleep(delay);
-                    if (running) {
-                        callback.apply(null, args);
-                    }
-                } catch(e) {
-                    break;
-                }
-            }
-        }
-    });
-    
-    const intervalObj = {
-        thread: thread,
-        stop: function() {
-            running = false;
-            try {
-                if (this.thread && this.thread.isAlive()) {
-                    this.thread.interrupt();
-                    this.thread.join(100);
-                }
-            } catch(e) {
-                // خطای توقف
-            }
-            const idx = activeIntervals.indexOf(intervalObj);
-            if (idx > -1) {
-                activeIntervals.splice(idx, 1);
-            }
-        }
-    };
-    
-    activeIntervals.push(intervalObj);
-    thread.start();
-    return intervalObj;
-};
-
-/**
- * لغو اجرای setInterval
- * @param {Object} interval - آبجکت اینتروال برگشتی از setInterval
- */
-function clearInterval(interval) {
-    if (interval && interval.stop) {
-        interval.stop();
-    }
-};
-
-/**
- * پاک کردن تمام اینتروال‌های فعال
- */
-function cleanupAllIntervals() {
-    while (activeIntervals.length > 0) {
-        const interval = activeIntervals[0];
-        if (interval && interval.stop) {
-            interval.stop();
-        }
-    }
-};
-
-// ========================================
-// کتابخانه جامع و بهینه Promise برای Rhino 1.7.15
-// ========================================
-
-// =========================================
-// پیاده‌سازی کامل و بهینه Promise
-// =========================================
-
-(function(global) {
+(function() {
     
     'use strict';
     
@@ -1224,7 +1426,9 @@ function cleanupAllIntervals() {
                 reject(new TypeError('Promise.race requires an array'));
                 return;
             }
-            
+            if (promises.length === 0) {
+              return;
+            }
             var settled = false;
             
             for (var i = 0; i < promises.length; i++) {
@@ -1278,7 +1482,11 @@ function cleanupAllIntervals() {
                                 rejectedCount++;
                                 if (rejectedCount === length) {
                                     settled = true;
-                                    reject(new Error('All promises were rejected'));
+                                    // ایجاد AggregateError (ساختار ساده برای Rhino)
+                                    var aggregateErr = new Error('All promises were rejected');
+                                    aggregateErr.name = 'AggregateError';
+                                    aggregateErr.errors = errors;
+                                    reject(aggregateErr);
                                 }
                             }
                         }
@@ -1286,7 +1494,7 @@ function cleanupAllIntervals() {
                 })(i);
             }
         });
-    };
+    };    
     
     // ============================================
     // Static Methods - Utilities
@@ -1379,14 +1587,13 @@ function cleanupAllIntervals() {
     Promise.promisify = function(fn) {
         return function() {
             var args = Array.prototype.slice.call(arguments);
-            var self = this;
             
             return new Promise(function(resolve, reject) {
                 args.push(function(error, result) {
                     if (error) reject(error);
                     else resolve(result);
                 });
-                fn.apply(self, args);
+                fn.apply(this, args);
             });
         };
     };
@@ -1622,22 +1829,44 @@ function cleanupAllIntervals() {
     Promise.disableWarnings = function() { Promise._suppressWarnings = true; };
     Promise.enableWarnings = function() { Promise._suppressWarnings = false; };
     
-    // ============================================
-    // تابع sleep بعد از تکمیل Promise
-    // ============================================
-    
-    function sleep(ms) {
-        return Promise.delay(ms);
-    }
-    
-    // ============================================
-    // Export
-    // ============================================
-    
-    global.Promise = Promise;
-    global.sleep = sleep;
     
 })(this);
+/**
+ * ============================================================
+ * 🐛 سیستم مدیریت لاگ فشرده (Debug Logger)
+ * ============================================================
+ * 
+ * 🎯 هدف: کنترل و مدیریت لاگ‌ها با قابلیت فعال/غیرفعال کردن
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 توابع ارائه شده:
+ *   - objectToText()      - تبدیل آبجکت به متن درختی (برای نمایش)
+ *   - logObject()         - لاگ کردن آبجکت با فرمت درختی
+ *   - formatText()        - فرمت‌دهی متن با الگو و داده
+ *   - template()          - تبدیل template literal به فرمت‌پذیر
+ *   - manageLog()         - تابع اصلی مدیریت لاگ
+ *   - logDebug()          - لاگ سطح دیباگ
+ *   - logInfo()           - لاگ سطح اطلاعات
+ *   - logWarn()           - لاگ سطح هشدار
+ *   - logError()          - لاگ سطح خطا
+ *   - logData()           - لاگ همراه با آبجکت
+ *   - logForce()          - لاگ اجباری (بدون فیلتر)
+ * 
+ * 📌 ساختار DEBUG_CONFIG:
+ *   - enabled: true/false
+ *   - levels: سطوح فعال (debug, info, warn, error)
+ *   - sources: تنظیمات هر منبع (منبع → سکشن‌ها)
+ * 
+ * ⚠️ وابستگی‌ها: بخش 1.3 (toFarsiNumber, addDirectionControl)
+ * 
+ * 📌 نکات فنی:
+ *   - objectToText از الگوریتم درختی با قابلیت compact استفاده می‌کند
+ *   - formatText از دو روش آرگومان متعدد و آبجکت داده پشتیبانی می‌کند
+ *   - template تابعی برای تبدیل template literal به string قابل فرمت است
+ * 
+ * ============================================================
+ */
 // تابع اصلی برای تبدیل آبجکت به متن درختی
 function objectToText(obj, option) {
     // 📝 مقداردهی اولیه پارامترها با مقادیر پیش‌فرض
@@ -2162,15 +2391,42 @@ function manageLog(message, options, data) {
 }
 
 // 📝 توابع کمکی فشرده
-function logDebug(s, sec, line, m) { manageLog(m, {source:s, level:'debug', section:sec, line:line}); }
-function logInfo(s, sec, line, m)  { manageLog(m, {source:s, level:'info', section:sec, line:line}); }
-function logWarn(s, sec, line, m)  { manageLog(m, {source:s, level:'warn', section:sec, line:line}); }
-function logError(s, sec, line, m) { manageLog(m, {source:s, level:'error', section:sec, line:line}); }
-function logData(s, sec, line,d,m) { manageLog(m, {source:s, level:'debug', section:sec, line:line}, d); }
-function logForce(s, sec, line, m) { manageLog(m, {source:s, level:'info', section:sec, force:true, line:line}); }
+function logDebug(s, sec, line, m) { manageLog(m || '', {source:s, level:'debug', section:sec, line:line}); }
+function logInfo(s, sec, line, m)  { manageLog(m || '', {source:s, level:'info', section:sec, line:line}); }
+function logWarn(s, sec, line, m)  { manageLog(m || '', {source:s, level:'warn', section:sec, line:line}); }
+function logError(s, sec, line, m) { manageLog(m || '', {source:s, level:'error', section:sec, line:line}); }
+function logData(s, sec, line,d,m) { manageLog(m || '', {source:s, level:'debug', section:sec, line:line}, d); }
+function logForce(s, sec, line, m) { manageLog(m || '', {source:s, level:'info', section:sec, force:true, line:line}); }
 
 
-
+/**
+ * ============================================================
+ * ✈️ کلاس‌های اصلی مدیریت ماموریت‌ها
+ * ============================================================
+ * 
+ * 🎯 هدف: پیاده‌سازی کلاس‌های parvaz, typeMamoriat, mamoriat
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 کلاس‌های ارائه شده:
+ *   - parvaz             - مدیریت پروازها
+ *   - parvazLimit        - محدودیت‌های پرواز (تکراری - نیاز به بازبینی)
+ *   - typeMamoriat       - انواع ماموریت و قوانین (1-7)
+ *   - mamoriat           - مدیریت ماموریت‌ها
+ *   - mamoriatLib        - کتابخانه ماموریت‌ها
+ *   - refreshMamoriatLibrary() - همگام‌سازی خودکار
+ * 
+ * 📌 قابلیت‌های کلاس mamoriat:
+ *   - بررسی تداخل (با کش)
+ *   - محاسبه تاریخچه پروازها (با کش)
+ *   - تعیین نفرات قابل استفاده
+ *   - فرمت‌دهی زمان و تاریخ
+ *   - مدیریت تاریخ نسبی (امروز، فردا، هفته بعد و...)
+ * 
+ * ⚠️ وابستگی‌ها: بخش 2.1, 1.2, 4.1
+ * 
+ * ============================================================
+ */
 // ==================== 🧩 پایه موجودیت ================
 function initBaseEntity(instance, entry) {
   // خصوصیات پایه
@@ -3388,7 +3644,37 @@ this.syncCreate= function() {
 }
 }
 
-
+/**
+ * ============================================================
+ * 📊 توابع پایه و زنجیره‌ای آرایه‌های ماموریت
+ * ============================================================
+ * 
+ * 🎯 هدف: تبدیل و پردازش آرایه‌های ماموریت با قابلیت زنجیره‌ای
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 توابع ارائه شده:
+ *   - entriesToMamoriatEntreis() - تبدیل entries به آرایه mamoriat
+ *   - entriesToTypeMamoriatEntreis() - تبدیل به typeMamoriat
+ *   - getMArray()          - دریافت کش شده ماموریت‌ها (TTL 60s)
+ *   - markdownMamoriatPersonsBetweenTowDate() - گزارش Markdown
+ * 
+ * 📌 متدهای زنجیره‌ای آرایه (filterInternal, filterByPerson, ...):
+ *   - filterInternal()     - فیلتر با حفظ متدها
+ *   - filterByPerson()     - فیلتر بر اساس نفر
+ *   - filterByDate()       - فیلتر بر اساس تاریخ
+ *   - filterBetweenTwoDates() - فیلتر بازه زمانی
+ *   - filterOnlyParvaz()   - فقط پروازها
+ *   - filterByTypeParvazEntryLinkShortName() - فیلتر نوع پرواز
+ *   - createLink()         - ایجاد لینک برای سرعت بیشتر
+ *   - sortByDate()         - مرتب‌سازی بر اساس تاریخ
+ *   - groupBy()            - گروه‌بندی دلخواه
+ *   - uniqueBy()           - حذف تکراری بر اساس کلید
+ * 
+ * ⚠️ وابستگی‌ها: بخش 3.1, 1.2
+ * 
+ * ============================================================
+ */
 // ==============================================
 // 🛠️ توابع کمکی عمومی
 // ==============================================
@@ -3980,7 +4266,148 @@ function getMArray(forceRefresh) {
     }
     return _mArrayCache;
 }
+function markdownMamoriatPersonsBetweenTowDate(meArray, persons, startDate, endDate) {
+    // 🎯 تابع کمکی برای تبدیل ماموریت به نمادهای نمایشی
+    const mamoriatToSymbol = (me, chd, firstMarkdownd) => {
+        let result = {
+            symbol: "",
+            name: "",
+            name2: "",
+            airplan: ""
+        };
+        //logObject(result,'result0(2654):')
 
+        if (me.length === 0) return result;
+
+        const startDatem = me[0].startDateEn.getDateWithoutTime().getTime();
+        const endDatem = me[0].startDateEn.addDay(me[0].duration - 1).getDateWithoutTime().getTime();
+        const checkDate = chd.getDateWithoutTime().getTime();
+        const firstMarkdowndate = (firstMarkdownd || chd).getDateWithoutTime().getTime();
+
+        // 🔍 بررسی موقعیت تاریخ نسبت به ماموریت
+        if ((startDatem < checkDate && endDatem < checkDate) || (startDatem > checkDate && endDatem > checkDate)) {
+            //logObject(result,'result1(2654):')
+            return result;
+        }
+
+        // 📍 ماموریت قبل از تاریخ شروع گزارش
+        if (startDatem < checkDate && checkDate === firstMarkdowndate) {
+            result.symbol = "××";
+            if (me[0].statusDay === "پرواز") {
+                result.airplan = me[0].e.name.slice(0, 2);
+                result.name = me[0].e.name.slice(6, 9);
+                result.name2 = ("" + Math.abs(chd.getDate() - me[0].startDateEn.getDate() - 1) + "d");
+            } else {
+                result.name = me[0].e.name.slice(0, 3);
+                result.name2 = ("" + Math.abs(chd.getDate() - me[0].startDateEn.getDate()) + "d");
+            }
+            //logObject(result,'result2(2654):')
+            return result;
+        }
+
+        // 📍 شروع ماموریت در این تاریخ
+        if (startDatem === checkDate) {
+            result.symbol = "××";
+            if (me[0].statusDay === "پرواز") {
+                result.airplan = me[0].e.name.slice(0, 2);
+                result.name = me[0].e.name.slice(6, 9);
+                result.name2 = me[0].e.name.slice(10, 13);
+            } else {
+                result.name2 = me[0].e.name.slice(0, 3);
+            }
+            //logObject(result,'result3(2654):')
+            return result;
+        }
+
+        // 📍 ماموریت بعد از این تاریخ
+        if (endDatem > checkDate) {
+            if (me[0].statusDay === "پرواز") {
+                result.name = "»»»";
+            } else {
+                result.name2 = "»»»";
+            }
+            //logObject(result,'result4(2654):')
+            return result;
+        }
+
+        // 📍 ماموریت در حال انجام
+        if (me[0].statusDay === "پرواز") {
+            const endHour = me[0].endTime ? me[0].endTime.getHours() : 0;
+            result.name = endHour <= 4 ? "»" : endHour >= 18 ? "»»»" : "»»";
+        } else {
+            result.name2 = "»»";
+        }
+
+        //logObject(result,'result5(2654):')
+        return result;
+    };
+
+    // 📅 فیلتر ماموریت‌ها در بازه زمانی
+    const filteredMeArray = meArray.filterBetweenTwoDates(startDate, endDate);
+    //logObject(filteredMeArray,'filteredMeArray');
+    const weekdays = ["Sat","Sun","Mon","Tue","Wed","Thu","Fri"];
+    let header = "Dy//Wk,", csvContent = "";
+    
+    persons.forEach((person, pi) => {
+        const missions = filteredMeArray.filterByPerson(person);
+        let row = person;
+        
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            if (pi === 0) header += formatText("{day:02}//{weekday:3},", {
+                day: d.getPersianDay(),
+                weekday: weekdays[d.getPersianWeekday() - 1]
+            });
+            
+            const daily = missions.filterByDate(d);
+            const symbols = mamoriatToSymbol(daily, d, startDate);
+            row += "," + formatText("{airplan}//{name}//{name2}", symbols);
+        }
+        
+        if (pi === 0) csvContent = header.slice(0, -1) + "\n";
+        csvContent += row + (pi < persons.length - 1 ? "\n" : "");
+    });
+    
+    const markdown = csvToMarkdown(csvContent, {
+        delimiter: ",",
+        breakLine: '//',
+        compact: true,
+        separatorBetweenRows: true
+    });
+    
+    return markdown;
+}
+/**
+ * ============================================================
+ * 📈 آمار پروازی و اولویت‌بندی افراد (Static Parvaz)
+ * ============================================================
+ * 
+ * 🎯 هدف: محاسبه آمار و اولویت افراد برای انواع ماموریت
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 توابع ارائه شده:
+ *   - getStatisticsParvaz() - محاسبه اصلی آمار و اولویت‌بندی
+ *   - generateRuleReports() - تولید گزارش قوانین 1-7
+ *   - getStates()          - تحلیل تعادل و شناسایی Outliers (IQR)
+ *   - getGrade()           - گریدبندی (سطح‌بندی) افراد
+ * 
+ * 📌 قوانین محاسباتی (1 تا 7):
+ *   - قانون 1: پراکندگی تعداد و روزهای پرواز
+ *   - قانون 2: پراکندگی نسبت به گروه‌های خاص
+ *   - قانون 4: مراعات افراد در روزهای اخیر
+ *   - قانون 6: گروه‌های محاسباتی
+ *   - قانون 7: تجمیع گروه نهایی
+ * 
+ * 📌 خروجی:
+ *   - persons: داده‌های هر نفر (امتیازات، درصدها، گریدها)
+ *   - groupStatistics: آمار هر گروه
+ *   - balanceScore: امتیاز تعادل کلی
+ *   - ruleWeightData: وزن‌های استفاده شده
+ * 
+ * ⚠️ وابستگی‌ها: بخش 4.1, 3.1, 1.3
+ * 
+ * ============================================================
+ */
 /**
  * تابع اصلی برای محاسبه آمار پروازی و اولویت‌بندی نفرات
  * این تابع با تحلیل داده‌های تاریخی ماموریت‌ها، اولویت هر نفر را برای هر نوع ماموریت محاسبه می‌کند
@@ -5456,7 +5883,34 @@ function getGrade(inputData, levelsCount, isAscending) {
   
   return results;
 }
-
+/**
+ * ============================================================
+ * 🔄 تجمیع گروه نهایی (Consolidated Parvaz)
+ * ============================================================
+ * 
+ * 🎯 هدف: تجمیع چند نوع ماموریت در یک گروه نهایی با ضرایب
+ * 📅 آخرین به‌روزرسانی: 1404/01/15
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 توابع ارائه شده:
+ *   - getConsolidatedParvaz() - محاسبه آمار تجمیع شده
+ *   - generateSimpleSummaryReport() - گزارش خلاصه گروه
+ * 
+ * 📌 مفاهیم کلیدی:
+ *   - consolidationType_Name: نام گروه تجمیع
+ *   - consolidationType_Coefficient: ضریب هر نوع ماموریت
+ *   - consolidationType_MasterType: تایپ اصلی برای خواندن ضرایب
+ *   - normalized: امتیاز نرمال‌شده (بازه [1-10] → [0-900])
+ * 
+ * 📌 خروجی هر گروه:
+ *   - persons: داده‌های هر نفر (actual, normalized)
+ *   - totals: مجموع گروه
+ *   - consolidationInfo: اطلاعات گروه (اعضا، ضرایب، نرمال‌سازی)
+ * 
+ * ⚠️ وابستگی‌ها: بخش 4.1, 3.1, 1.3
+ * 
+ * ============================================================
+ */
 /**
  * تابع ساده‌شده برای محاسبه آمار پروازی تجمیع شده
  * فقط اطلاعات اصلی و امتیازهای نرمال‌شده
@@ -5533,9 +5987,7 @@ function getConsolidatedParvaz(options) {
     : consolidationGroups;
   
   // 📋 استخراج تاریخچه ماموریت‌ها
-  if (typeof mArray === 'undefined') {
-      mArray = entriesToMamoriatEntreis(libByName("ماموریت نفرات").entries());
-  }
+  const mArray = getMArray();
   const mArrayParvaz = mArray.filterOnlyParvaz();
   mArrayParvaz.createLink("typeParvazEntry");
   
@@ -5814,113 +6266,3 @@ function generateSimpleSummaryReport(consolidatedData) {
     return report;
 }
 
-function markdownMamoriatPersonsBetweenTowDate(meArray, persons, startDate, endDate) {
-    // 🎯 تابع کمکی برای تبدیل ماموریت به نمادهای نمایشی
-    const mamoriatToSymbol = (me, chd, firstMarkdownd) => {
-        let result = {
-            symbol: "",
-            name: "",
-            name2: "",
-            airplan: ""
-        };
-        //logObject(result,'result0(2654):')
-
-        if (me.length === 0) return result;
-
-        const startDatem = me[0].startDateEn.getDateWithoutTime().getTime();
-        const endDatem = me[0].startDateEn.addDay(me[0].duration - 1).getDateWithoutTime().getTime();
-        const checkDate = chd.getDateWithoutTime().getTime();
-        const firstMarkdowndate = (firstMarkdownd || chd).getDateWithoutTime().getTime();
-
-        // 🔍 بررسی موقعیت تاریخ نسبت به ماموریت
-        if ((startDatem < checkDate && endDatem < checkDate) || (startDatem > checkDate && endDatem > checkDate)) {
-            //logObject(result,'result1(2654):')
-            return result;
-        }
-
-        // 📍 ماموریت قبل از تاریخ شروع گزارش
-        if (startDatem < checkDate && checkDate === firstMarkdowndate) {
-            result.symbol = "××";
-            if (me[0].statusDay === "پرواز") {
-                result.airplan = me[0].e.name.slice(0, 2);
-                result.name = me[0].e.name.slice(6, 9);
-                result.name2 = ("" + Math.abs(chd.getDate() - me[0].startDateEn.getDate() - 1) + "d");
-            } else {
-                result.name = me[0].e.name.slice(0, 3);
-                result.name2 = ("" + Math.abs(chd.getDate() - me[0].startDateEn.getDate()) + "d");
-            }
-            //logObject(result,'result2(2654):')
-            return result;
-        }
-
-        // 📍 شروع ماموریت در این تاریخ
-        if (startDatem === checkDate) {
-            result.symbol = "××";
-            if (me[0].statusDay === "پرواز") {
-                result.airplan = me[0].e.name.slice(0, 2);
-                result.name = me[0].e.name.slice(6, 9);
-                result.name2 = me[0].e.name.slice(10, 13);
-            } else {
-                result.name2 = me[0].e.name.slice(0, 3);
-            }
-            //logObject(result,'result3(2654):')
-            return result;
-        }
-
-        // 📍 ماموریت بعد از این تاریخ
-        if (endDatem > checkDate) {
-            if (me[0].statusDay === "پرواز") {
-                result.name = "»»»";
-            } else {
-                result.name2 = "»»»";
-            }
-            //logObject(result,'result4(2654):')
-            return result;
-        }
-
-        // 📍 ماموریت در حال انجام
-        if (me[0].statusDay === "پرواز") {
-            const endHour = me[0].endTime ? me[0].endTime.getHours() : 0;
-            result.name = endHour <= 4 ? "»" : endHour >= 18 ? "»»»" : "»»";
-        } else {
-            result.name2 = "»»";
-        }
-
-        //logObject(result,'result5(2654):')
-        return result;
-    };
-
-    // 📅 فیلتر ماموریت‌ها در بازه زمانی
-    const filteredMeArray = meArray.filterBetweenTwoDates(startDate, endDate);
-    //logObject(filteredMeArray,'filteredMeArray');
-    const weekdays = ["Sat","Sun","Mon","Tue","Wed","Thu","Fri"];
-    let header = "Dy//Wk,", csvContent = "";
-    
-    persons.forEach((person, pi) => {
-        const missions = filteredMeArray.filterByPerson(person);
-        let row = person;
-        
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            if (pi === 0) header += formatText("{day:02}//{weekday:3},", {
-                day: d.getPersianDay(),
-                weekday: weekdays[d.getPersianWeekday() - 1]
-            });
-            
-            const daily = missions.filterByDate(d);
-            const symbols = mamoriatToSymbol(daily, d, startDate);
-            row += "," + formatText("{airplan}//{name}//{name2}", symbols);
-        }
-        
-        if (pi === 0) csvContent = header.slice(0, -1) + "\n";
-        csvContent += row + (pi < persons.length - 1 ? "\n" : "");
-    });
-    
-    const markdown = csvToMarkdown(csvContent, {
-        delimiter: ",",
-        breakLine: '//',
-        compact: true,
-        separatorBetweenRows: true
-    });
-    
-    return markdown;
-}
