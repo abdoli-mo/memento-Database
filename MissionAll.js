@@ -265,7 +265,9 @@ function clearTimeout(thread) {
 };
 
 // ذخیره اینتروال‌های فعال
-const activeIntervals = [];
+if (typeof _activeIntervals === 'undefined') {
+  const activeIntervals = [];
+}
 
 /**
  * اجرای تابع به صورت دوره‌ای (جاوا)
