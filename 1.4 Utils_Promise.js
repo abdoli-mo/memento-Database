@@ -1,12 +1,29 @@
-// ========================================
-// کتابخانه جامع و بهینه Promise برای Rhino 1.7.15
-// ========================================
-
-// =========================================
-// پیاده‌سازی کامل و بهینه Promise
-// =========================================
-
-(function(global) {
+/**
+ * ============================================================
+ * بخش 1.4
+ * ⏱️ پیاده‌سازی کامل Promise برای Rhino
+ * ============================================================
+ * 
+ * 🎯 هدف: افزودن Promise و متدهای پیشرفته به محیط Rhino
+ * 📅 آخرین به‌روزرسانی: ۱۴۰۵/۰۲/۳۱
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 متدهای ارائه شده:
+ *   - Promise            - سازنده اصلی
+ *   - then/catch/finally - متدهای نمونه
+ *   - resolve/reject     - متدهای ایستا
+ *   - all/race/any/allSettled - ترکیب‌کننده‌ها
+ *   - delay/timeout      - تاخیر و محدودیت زمان
+ *   - retry/sequential/parallel - الگوهای اجرا
+ *   - cancellable/promisify - قابلیت‌های پیشرفته
+ *   - map/reduce/props   - پردازش مجموعه‌ها
+ *   - debounce/queue/pipeline - ابزارهای کاربردی
+ * 
+ * ⚠️ وابستگی‌ها: بخش 1.1 (setTimeout)
+ * 
+ * ============================================================
+ */
+(function() {
     
     'use strict';
     
@@ -301,7 +318,9 @@
                 reject(new TypeError('Promise.race requires an array'));
                 return;
             }
-            
+            if (promises.length === 0) {
+              return;
+            }
             var settled = false;
             
             for (var i = 0; i < promises.length; i++) {
@@ -355,7 +374,11 @@
                                 rejectedCount++;
                                 if (rejectedCount === length) {
                                     settled = true;
-                                    reject(new Error('All promises were rejected'));
+                                    // ایجاد AggregateError (ساختار ساده برای Rhino)
+                                    var aggregateErr = new Error('All promises were rejected');
+                                    aggregateErr.name = 'AggregateError';
+                                    aggregateErr.errors = errors;
+                                    reject(aggregateErr);
                                 }
                             }
                         }
@@ -363,7 +386,7 @@
                 })(i);
             }
         });
-    };
+    };    
     
     // ============================================
     // Static Methods - Utilities
@@ -456,14 +479,13 @@
     Promise.promisify = function(fn) {
         return function() {
             var args = Array.prototype.slice.call(arguments);
-            var self = this;
             
             return new Promise(function(resolve, reject) {
                 args.push(function(error, result) {
                     if (error) reject(error);
                     else resolve(result);
                 });
-                fn.apply(self, args);
+                fn.apply(this, args);
             });
         };
     };
@@ -699,19 +721,5 @@
     Promise.disableWarnings = function() { Promise._suppressWarnings = true; };
     Promise.enableWarnings = function() { Promise._suppressWarnings = false; };
     
-    // ============================================
-    // تابع sleep بعد از تکمیل Promise
-    // ============================================
-    
-    function sleep(ms) {
-        return Promise.delay(ms);
-    }
-    
-    // ============================================
-    // Export
-    // ============================================
-    
-    global.Promise = Promise;
-    global.sleep = sleep;
     
 })(this);
