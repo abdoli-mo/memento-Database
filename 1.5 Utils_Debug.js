@@ -1,4 +1,40 @@
-
+/**
+ * ============================================================
+ * بخش 1.5
+ * 🐛 سیستم مدیریت لاگ فشرده (Debug Logger)
+ * ============================================================
+ * 
+ * 🎯 هدف: کنترل و مدیریت لاگ‌ها با قابلیت فعال/غیرفعال کردن
+ * 📅 آخرین به‌روزرسانی: ۱۴۰۵/۰۲/۳۱
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 توابع ارائه شده:
+ *   - objectToText()      - تبدیل آبجکت به متن درختی (برای نمایش)
+ *   - logObject()         - لاگ کردن آبجکت با فرمت درختی
+ *   - formatText()        - فرمت‌دهی متن با الگو و داده
+ *   - template()          - تبدیل template literal به فرمت‌پذیر
+ *   - manageLog()         - تابع اصلی مدیریت لاگ
+ *   - logDebug()          - لاگ سطح دیباگ
+ *   - logInfo()           - لاگ سطح اطلاعات
+ *   - logWarn()           - لاگ سطح هشدار
+ *   - logError()          - لاگ سطح خطا
+ *   - logData()           - لاگ همراه با آبجکت
+ *   - logForce()          - لاگ اجباری (بدون فیلتر)
+ * 
+ * 📌 ساختار DEBUG_CONFIG:
+ *   - enabled: true/false
+ *   - levels: سطوح فعال (debug, info, warn, error)
+ *   - sources: تنظیمات هر منبع (منبع → سکشن‌ها)
+ * 
+ * ⚠️ وابستگی‌ها: بخش 1.3 (toFarsiNumber, addDirectionControl)
+ * 
+ * 📌 نکات فنی:
+ *   - objectToText از الگوریتم درختی با قابلیت compact استفاده می‌کند
+ *   - formatText از دو روش آرگومان متعدد و آبجکت داده پشتیبانی می‌کند
+ *   - template تابعی برای تبدیل template literal به string قابل فرمت است
+ * 
+ * ============================================================
+ */
 // تابع اصلی برای تبدیل آبجکت به متن درختی
 function objectToText(obj, option) {
     // 📝 مقداردهی اولیه پارامترها با مقادیر پیش‌فرض
@@ -523,9 +559,9 @@ function manageLog(message, options, data) {
 }
 
 // 📝 توابع کمکی فشرده
-function logDebug(s, sec, line, m) { manageLog(m, {source:s, level:'debug', section:sec, line:line}); }
-function logInfo(s, sec, line, m)  { manageLog(m, {source:s, level:'info', section:sec, line:line}); }
-function logWarn(s, sec, line, m)  { manageLog(m, {source:s, level:'warn', section:sec, line:line}); }
-function logError(s, sec, line, m) { manageLog(m, {source:s, level:'error', section:sec, line:line}); }
-function logData(s, sec, line,d,m) { manageLog(m, {source:s, level:'debug', section:sec, line:line}, d); }
-function logForce(s, sec, line, m) { manageLog(m, {source:s, level:'info', section:sec, force:true, line:line}); }
+function logDebug(s, sec, line, m) { manageLog(m || '', {source:s, level:'debug', section:sec, line:line}); }
+function logInfo(s, sec, line, m)  { manageLog(m || '', {source:s, level:'info', section:sec, line:line}); }
+function logWarn(s, sec, line, m)  { manageLog(m || '', {source:s, level:'warn', section:sec, line:line}); }
+function logError(s, sec, line, m) { manageLog(m || '', {source:s, level:'error', section:sec, line:line}); }
+function logData(s, sec, line,d,m) { manageLog(m || '', {source:s, level:'debug', section:sec, line:line}, d); }
+function logForce(s, sec, line, m) { manageLog(m || '', {source:s, level:'info', section:sec, force:true, line:line}); }
