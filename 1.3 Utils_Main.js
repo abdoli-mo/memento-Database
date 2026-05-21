@@ -1,12 +1,41 @@
-// =============================================
-// 📚 توابع کمکی عمومی (Utility Functions)
-// =============================================
-
+/**
+ * ============================================================
+ * بخش 1.3
+ * 🛠️ توابع کمکی عمومی (Utility Functions)
+ * ============================================================
+ * 
+ * 🎯 هدف: ارائه توابع پرکاربرد و عمومی
+ * 📅 آخرین به‌روزرسانی: ۱۴۰۵/۰۲/۳۱
+ * 👤 نویسنده: تیم توسعه
+ * 
+ * 📌 توابع ارائه شده:
+ *   - toFarsiNumber()    - تبدیل اعداد به فارسی (مستقل)
+ *   - time()             - استخراج ساعت و دقیقه
+ *   - sleep()            - توقف اجرا (همگام/ناهمگام)
+ *   - sleepThen()        - اجرا پس از تاخیر
+ *   - roundUp()          - گرد کردن رو به بالا
+ *   - uniqAndSort()      - حذف تکراری و مرتب‌سازی
+ *   - sorted()           - مرتب‌سازی بدون تغییر اصلی
+ *   - quantile()         - محاسبه کوانتیل
+ *   - ranking()          - رتبه‌بندی مقادیر
+ *   - addDirectionControl() - کنترل جهت متن (RTL/LTR)
+ *   - csvToMarkdown()    - تبدیل CSV به جدول Markdown
+ * 
+ * ⚠️ وابستگی‌ها: بخش 1.1 (Polyfill ها)
+ * 
+ * 📌 نکات فنی:
+ *   - تابع toFarsiNumber مستقل است و از جایگزینی یونیکد (1728+) استفاده می‌کند
+ *   - تابع sleep ابتدا Thread.sleep جاوا را امتحان می‌کند، سپس Promise و در نهایت busy-wait
+ *   - تابع csvToMarkdown از polyfill های آرایه (flat, flatMap) استفاده می‌کند
+ * 
+ * ============================================================
+ */
 /**
  * تبدیل اعداد انگلیسی به فارسی
  * @param {number|string} num - عدد یا رشته حاوی عدد
  * @returns {string} عدد به صورت فارسی
  */
+ 
 function toFarsiNumber(num) {
     if (num === null || num === undefined) return '';
     return num.toString().replace(/\d/g, function(token) {
@@ -111,22 +140,31 @@ function sorted (arr) {
  * @param {boolean} isSorted - آیا آرایه از قبل مرتب شده است؟
  * @returns {number} مقدار کوانتیل
  */
-function quantile (arr, q, isSorted) {
+function quantile(arr, q, isSorted) {
+    // اعتبارسنجی ورودی
+    if (!arr || !Array.isArray(arr) || arr.length === 0) {
+        return 0;
+    }
+    
+    // اعتبارسنجی مقدار q
+    q = Math.max(0, Math.min(1, q));
+    
     let sortedArr;
     if (isSorted === true) {
         sortedArr = arr;
     } else {
         sortedArr = arr.slice().sort(function(a, b) { return a - b; });
     }
-    if (!sortedArr || sortedArr.length === 0) return 0;
+    
     const pos = (sortedArr.length - 1) * q;
     const base = Math.floor(pos);
     const rest = pos - base;
+    
     if (sortedArr[base + 1] !== undefined) {
         return sortedArr[base] + rest * (sortedArr[base + 1] - sortedArr[base]);
     }
     return sortedArr[base];
-};
+}
 
 /**
  * رتبه‌بندی مقادیر در آرایه
@@ -462,4 +500,3 @@ function csvToMarkdown(csvContent, options) {
     
     return controlledLines.join('\n');
 }
-
