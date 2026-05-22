@@ -1,17 +1,17 @@
 /**
- * ===========================================
+ * ==========================================
  * بخش 0.0
  * 📖 راهنمای موتور جاوااسکریپت Rhino 1.7.15
- * ===========================================
+ * ==========================================
  * 
  * 🎯 Rhino چیست؟
  *   Rhino یک موتور جاوااسکریپت متن‌باز است که به زبان جاوا نوشته شده
  *   و توسط بنیاد موزیلا توسعه داده می‌شود. این موتور به شما امکان
  *   می‌دهد کدهای جاوااسکریپت را در محیط جاوا اجرا کنید.
  * 
- * ============================================
+ * ===========================================
  * ✅ مواردی که در Rhino 1.7.15 به صورت NATIVE پشتیبانی می‌شوند
- * ============================================
+ * ===========================================
  * 
  *   📌 ECMAScript 5:
  *      - تمام ویژگی‌های ES5 به طور کامل پشتیبانی می‌شود
@@ -2452,7 +2452,7 @@ function initBaseEntity(instance, entry) {
     
     Object.defineProperty(this, name, {
       get: () =>  {//logObject(this.e,'389:this.e');
-        val=this.e.field(field)
+        let val=this.e.field(field)
         return this._convertValue(val !== undefined ? val : def, type) },
       set: (val) => this.setField(field, val !== null && val !== undefined ? val: def),
       enumerable: true
@@ -2728,7 +2728,7 @@ Object.keys(fields).forEach(function(name) {
       p: {
         get: () => {
           try {
-            return this.parvaz[0] ? this.parvaz[0] : null;
+            return this.parvaz[0] ? this.parvaz[0] : this.parvazEntry[0] ;
           } catch (e) {
             log('Error: can not get p');
             return null;
