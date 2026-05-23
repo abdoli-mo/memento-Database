@@ -2724,18 +2724,50 @@ Object.keys(fields).forEach(function(name) {
   this.monthNames =(()=> ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", 
                     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]);
 
-    Object.defineProperties(this, {
-      p: {
-        get: () => {
-          try {
-            return this.parvaz[0] ? this.parvaz[0] : this.parvazEntry[0] ;
-          } catch (e) {
-            log('Error: can not get p');
+Object.defineProperties(this, {
+    p: {
+      get: function() {
+        try {
+            // حالت اول: parvaz موجود است
+            if (this.parvaz && this.parvaz[0]) 
+                return this.parvaz[0];
+            // حالت دوم: parvazEntry موجود است
+            if (this.parvazEntry && this.parvazEntry[0]) {
+                const p = new parvaz(this.parvazEntry[0]);
+                this.parvaz = [{
+                    name: p.e.name,
+                    airplan: p.airplan,
+                    sherkat: p.sherkat,
+                    route: p.route,
+                    countLeg: p.countLeg,
+                    deployment: p.deployment,
+                    international: p.international,        
+                }];
+                return this.parvaz[0];
+            }
+            logError('mamoriat', 'getP', '2748', 'پروازی یافت نشد');
             return null;
-          }
+        } catch(e) {
+            logError('mamoriat', 'getP', '2748', 'خطا: ' + e.message);
+            return null;
+        }
+    },
+        set: function(val) {
+            try {
+                if (val) this.parvaz[0] = val;
+            } catch(e) {
+              logError('mamoriat', 'setP', '2', 'خطا: ' + e.message);
+            }
         },
-        set: (val) => this.parvazEntry[0] = val
-      },
+    },
+    pEntry: {
+        get: function() {
+            if (this.parvazEntry && this.parvazEntry[0]) 
+                return new parvaz(this.parvazEntry[0]);  // برگرداندن entry اصلی
+            logWarn('mamoriat', 'getPEntry', '2749', 'پرواز آنتری یافت نشد');
+            return null;
+        }
+    },
       weekdayEn: {
         get: () => this.weekdaysEn()[this.weekdayNumber - 1],
         set: (val) => this._setWeekdayEn(val)
@@ -2844,6 +2876,20 @@ Object.keys(fields).forEach(function(name) {
   // ====================
   // 👥 متدهای مدیریت نفرات
   // ====================
+
+/**
+ * همگام‌سازی اولیه ماموریت
+ */
+this.syncCreate= function() {
+  if (this.statusDay === "پرواز") {
+    this.startTime = this.pEntry.scheduleStartTime;
+    this.endTime = this.pEntry.scheduleEndTime;
+    this.duration = this.pEntry.duration || 1;
+  }
+
+  this.statusParvaz = "ایجاد پرواز";
+  this.syncUpdate();
+}
 
   this.syncUpdate= function() {
     const date = this.getDateRealative();
@@ -3382,23 +3428,23 @@ this.calcHistory = function(options) {
   }
 
   this._updateStatusAndColors= function() {
-    if (this.statusDay === "پرواز") {
-      this.typeParvazInitialEntry = this.p.typeParvazEntry;
+
+      if (this.statusDay === "پرواز") {
+      this.typeParvazInitialEntry = this.pEntry.typeParvazEntry;
       if (this.typeParvazEntry.length === 0) {
-        this.typeParvazEntry = this.p.typeParvazEntry;
+        this.typeParvazEntry = this.pEntry.typeParvazEntry;
       }
     } else {
       const lm = libByName("نوع ماموریت");
       if (this.typeParvazEntry.length === 0) {
-        const e = lm.findByKey(this.statusDay);
-        if (e) this.e.link(typeParvazEntry, e);
+        const _e = lm.findByKey(this.statusDay);
+        if (_e) this.e.link(fields.typeParvazEntry, _e);
       } else if (this.statusDay !== this.typeParvazEntry[0].name) {
-        this.e.unlink(typeParvazEntry, this.typeParvazEntry[0]);
-        this.e.link(typeParvazEntry, lm.findByKey(this.statusDay));
+        this.e.unlink(fields.typeParvazEntry, this.typeParvazEntry[0]);
+        this.e.link(fields.typeParvazEntry, lm.findByKey(this.statusDay));
       }
     }
-
-    this.bkGround = this.typeParvazEntry[0].field("رنگ") || "#7A221B";
+    this.bkGround = this.typeParvazEntry[0] && this.typeParvazEntry[0].field("رنگ") || "#7A221B";
     
     if (this.statusParvaz === "اولیه") {
       this.statusParvaz = "ایجاد پرواز";
@@ -3640,19 +3686,6 @@ this.endTimeFormat = function (format, local) {
 this.getEndWeekdayFa= function() {
   const endDayIndex = (this.weekdayNumber - 1 + parseInt(this.duration)- 1) % 7;
   return this.weekdays()[endDayIndex];
-}
-
-/**
- * همگام‌سازی اولیه ماموریت
- */
-this.syncCreate= function() {
-  if (this.statusDay === "پرواز") {
-    this.startTime = this.p.scheduleStartTime;
-    this.endTime = this.p.scheduleEndTime;
-    this.duration = this.p.duration || 1;
-  }
-  this.statusParvaz = "ایجاد پرواز";
-  this.syncUpdate();
 }
 }
 
